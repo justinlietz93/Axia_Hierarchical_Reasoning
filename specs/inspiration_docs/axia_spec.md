@@ -1,21 +1,22 @@
-# Tiny Recursive Orchestrator Specification
+# Axia Specification
 
-**Working name:** Tiny Recursive Orchestrator, abbreviated **TRO**  
-**Target runtime:** Local Ollama-compatible small language models  
-**Spec version:** 0.2  
-**Primary objective:** Make tiny local models produce substantially better user-facing results by surrounding them with deterministic planning, memory, validation, retry, critique, and synthesis loops.
+**Project name:** Axia  
+**Target runtime:** Provider-agnostic, local-first model execution through `crux-providers`; default profile routes to local Ollama-compatible small models  
+**Spec version:** 0.6  
+**Primary objective:** Make tiny local models produce substantially better user-facing results by surrounding them with deterministic planning, memory, validation, retry, critique, and synthesis loops.  
+**Architecture pattern:** Tiny recursive orchestration. Use **Axia** as the product name, package name, and CLI name.
 
 ---
 
 ## 1. Executive Summary
 
-TRO is a local application that turns a tiny Ollama model into a structured worker inside a deterministic orchestration system.
+Axia is a local-first application that turns a tiny provider-backed model into a structured worker inside a deterministic orchestration system. The default runtime profile is local Ollama through `crux-providers`, but the controller is provider-agnostic from the first build.
 
-TRO is not machine-learning software. It does not train a model, update weights, perform reinforcement learning, run LoRA jobs, or claim that the underlying model has learned new capability. It is an agentic harness: a deterministic controller that surrounds a weak local model with typed steps, memory, validation, scoring, repair, and replay.
+Axia is not machine-learning software. It does not train a model, update weights, perform reinforcement learning, run LoRA jobs, or claim that the underlying model has learned new capability. It is an agentic harness: a deterministic controller that surrounds a weak local model with typed steps, memory, validation, scoring, repair, and replay.
 
 The model is not treated as a general-purpose genius. It is treated as a small, noisy semantic operator. The application supplies everything the model is bad at: durable memory, task decomposition, context packing, validation, scoring, retry control, tool routing, and final synthesis.
 
-The user sees one assistant. Internally, TRO runs a controlled sequence of micro-steps. Each step asks the model for a narrow structured output, validates that output, stores it, and uses it to construct the next step. The result should feel like a larger, more careful model because the final answer is produced by an accumulated evidence trail rather than by one fragile completion.
+The user sees one assistant. Internally, Axia runs a controlled sequence of micro-steps. Each step asks the model for a narrow structured output, validates that output, stores it, and uses it to construct the next step. The result should feel like a larger, more careful model because the final answer is produced by an accumulated evidence trail rather than by one fragile completion.
 
 The closest inherited patterns from the supplied repositories are:
 
@@ -23,7 +24,7 @@ The closest inherited patterns from the supplied repositories are:
 2. **Hierarchical planning** from `hierarchical_reasoning_generator`: project constitution, phase/task/step decomposition, checkpointing, QA validation, executor/validator separation, and resumable plans.
 3. **RCoT-style orchestration** from the diagram: recursive self-critique, scoring thresholds, memory insertion, retrieval, and periodic improvement.
 
-TRO combines these into a smaller, faster, local-first system optimized for weak models.
+Axia combines these into a smaller, faster, local-first system optimized for weak models.
 
 ---
 
@@ -31,7 +32,7 @@ TRO combines these into a smaller, faster, local-first system optimized for weak
 
 Build a local app that lets a user ask a hard question or request a deliverable, then receives an answer that has been improved by deterministic recursive orchestration.
 
-The model alone may only be able to produce a shallow answer. TRO should improve it by forcing the model through a scaffolded chain:
+The model alone may only be able to produce a shallow answer. Axia should improve it by forcing the model through a scaffolded chain:
 
 ```text
 user request
@@ -54,7 +55,7 @@ The final answer must be grounded in stored intermediate artifacts and scored ag
 
 Tiny models fail mainly because they are overloaded.
 
-They are asked to understand the request, infer constraints, plan, remember, research, reason, critique, format, and answer in one pass. TRO separates these into narrow calls.
+They are asked to understand the request, infer constraints, plan, remember, research, reason, critique, format, and answer in one pass. Axia separates these into narrow calls.
 
 A tiny model can often do one constrained operation well enough:
 
@@ -72,7 +73,7 @@ The orchestrator turns those small successes into an answer that looks far beyon
 
 ## 4. Non-Deceptive Capability Framing
 
-TRO may make a tiny model appear more capable, but it must not pretend the model itself has become larger or trained unless that is literally true.
+Axia may make a tiny model appear more capable, but it must not pretend the model itself has become larger or trained unless that is literally true.
 
 The correct product claim is:
 
@@ -97,7 +98,7 @@ The UI may say "enhanced by orchestration" or "multi-step verified answer." It s
 
 The MVP must include:
 
-- Local Ollama model connection.
+- Provider-agnostic model connection through `crux-providers`, with local Ollama as the default profile.
 - Model profile manager for tiny models.
 - Deterministic run controller.
 - Task constitution generator.
@@ -111,6 +112,7 @@ The MVP must include:
 - CLI interface.
 - Minimal local web UI.
 - Complete run trace visible to the user.
+- Axia-owned schema-aware fake `LLMProvider` for deterministic offline controller tests.
 
 ### 5.2 Later Scope
 
@@ -144,7 +146,7 @@ The MVP must not include:
 
 | Term | Meaning |
 |---|---|
-| Tiny model | A small local Ollama-compatible model with limited context and weak single-shot reasoning. |
+| Tiny model | A small provider-backed model, usually local Ollama, with limited context and weak single-shot reasoning. |
 | Orchestrator | Deterministic controller that decides steps, prompts, retries, scoring, storage, and synthesis. |
 | Task constitution | Immutable run-level contract that defines goal, constraints, deliverable type, allowed tools, success rubric, and stop conditions. |
 | Work graph | Directed acyclic or bounded cyclic graph of tasks generated from the constitution. |
@@ -162,20 +164,58 @@ The MVP must not include:
 
 ## 7. Functional Requirements
 
-### FR-1: Local Ollama Model Execution
+### FR-1: Provider-Agnostic Model Execution Through `crux-providers`
 
-The app must connect to a local Ollama-compatible inference server through a replaceable adapter.
+The app must not implement its own Ollama HTTP client, OpenAI client, Anthropic client, Gemini client, retry wrapper, streaming wrapper, key resolver, or model-registry fetcher.
 
-The adapter must support:
+`crux-providers` is the sole LLM dependency and the model-access boundary. Axia's controller receives provider and model-registry/listing dependencies through constructor injection. The standalone CLI and local web server instantiate those dependencies in the composition root. The default composition root creates a local Ollama profile, but the controller itself must not know whether the backing provider is Ollama, OpenAI, Anthropic, Gemini, OpenRouter, Deepseek, xAI, or an Axia-owned fake `LLMProvider` test double.
 
-- prompt completion;
-- JSON-mode or JSON-repair fallback;
-- streaming and non-streaming output;
-- deterministic parameter profiles;
-- model health checks;
-- timeout handling;
-- retry with backoff;
-- raw request/response logging into the run manifest.
+The provider boundary must support:
+
+- text generation through the normalized `crux-providers` chat contract;
+- JSON-mode where the selected provider supports it;
+- JSON-repair fallback owned by Axia when the provider cannot guarantee structured output;
+- streaming and non-streaming output where exposed by the provider;
+- deterministic request parameters where the provider supports them;
+- model discovery through `ModelRegistryRepository`, `ModelListingProvider`, or concrete provider `list_models(refresh=False)` support;
+- timeout handling, retry, cancellation, and streaming primitives through the provider layer where available;
+- raw normalized `ProviderMetadata` written into the run manifest;
+- Axia-owned fake-provider injection for deterministic offline tests.
+
+#### Axia-Owned Fake Provider Contract
+
+Axia must include its own deterministic fake `LLMProvider` implementation for tests. This fake provider is not a trivial mock. It must exercise the controller path: prompt compilation, schema parsing, retry, JSON repair, scoring, and manifest capture.
+
+The fake provider must:
+
+- accept a `ChatRequest` and return a `ChatResponse`;
+- inspect prompt content for known patterns and return fixed schema-shaped JSON, such as returning `{"status": "ok", "value": "test"}` when the prompt contains an `output_schema` marker;
+- support configured failure modes, including malformed JSON, timeout-like failures, rate-limit-like failures, empty responses, and schema-mismatched JSON;
+- include deterministic metadata, such as `ProviderMetadata(request_id="fake-123", response_id="fake-456")`, so manifests have complete traces;
+- avoid network, Ollama, subprocesses, random sleeps, real clocks, or non-deterministic IDs unless they are explicitly supplied by the test.
+
+The purpose is to validate Axia's decision logic offline, not just to increase test coverage around a happy-path transport call.
+
+Concrete Crux imports expected by Axia:
+
+```python
+from crux_providers.base import (
+    ChatRequest,
+    ChatResponse,
+    Message,
+    ModelInfo,
+    ModelRegistryRepository,
+    ModelRegistrySnapshot,
+    ProviderFactory,
+    ProviderMetadata,
+)
+from crux_providers.base.dto.adapter_params import AdapterParams
+from crux_providers.base.interfaces import LLMProvider, ModelListingProvider
+```
+
+Axia must pin and test this exact public import surface with a startup smoke test.
+
+Provider-specific behavior belongs either inside `crux-providers` or in the composition root. It must not enter the Axia controller.
 
 ### FR-2: Model Profiles
 
@@ -489,9 +529,10 @@ Disallowed as a required product feature:
            ├──► Final Synthesizer
            └──► Memory Writer
 
-┌─────────────────────┐       ┌─────────────────────┐
-│ Ollama Adapter      │◄─────►│ Local Ollama Server │
-└─────────────────────┘       └─────────────────────┘
+┌─────────────────────┐       ┌─────────────────────────────┐
+│ Crux Adapter Bridge │◄─────►│ crux-providers              │
+│ Axia bridge only    │       │ Ollama/OpenAI/etc. adapters │
+└─────────────────────┘       └─────────────────────────────┘
 
 ┌─────────────────────┐       ┌─────────────────────┐
 │ SQLite Run Store    │       │ Vector/Keyword RAG  │
@@ -649,7 +690,7 @@ Human-approval policy is configurable.
 
 ## 13. Determinism Contract
 
-TRO must distinguish **controller determinism** from **model determinism**.
+Axia must distinguish **controller determinism** from **model determinism**.
 
 ### 13.1 Controller Determinism
 
@@ -664,7 +705,7 @@ The run manifest must record enough data to diagnose drift:
 - model name;
 - model digest if available;
 - quantization if available;
-- Ollama version if available;
+- provider, model, and backend version metadata where available;
 - runtime parameters;
 - prompt hashes;
 - output hashes.
@@ -899,7 +940,7 @@ node_type_budgets:
 
 ### 17.1 Non-ML Learning Boundary
 
-TRO's "learning" means improved orchestration through stored local artifacts. It does not mean model training.
+Axia's "learning" means improved orchestration through stored local artifacts. It does not mean model training.
 
 The application may store and retrieve:
 
@@ -913,7 +954,7 @@ The application may store and retrieve:
 - preferred answer styles;
 - live training slices from real interactions.
 
-These records improve future runs because the orchestrator can retrieve them, compare against them, score against them, or use them as examples in prompts. The Ollama model weights remain unchanged.
+These records improve future runs because the orchestrator can retrieve them, compare against them, score against them, or use them as examples in prompts. The underlying model weights remain unchanged.
 
 ### 17.2 Golden Example Store
 
@@ -978,7 +1019,7 @@ Training slices are database artifacts. They are not training jobs.
 
 ### 17.4 Reflection Pipeline
 
-After a run, TRO may create a reflection artifact:
+After a run, Axia may create a reflection artifact:
 
 ```text
 What did the user ask?
@@ -996,6 +1037,8 @@ This is stored only if policy allows.
 A later `training_export` feature may export curated JSONL examples from golden examples or training slices, but only after explicit user approval.
 
 The export feature is not a trainer. It only writes files for external use.
+
+MVP stores these records locally only. A future export path should be an explicit CLI action, such as `axia export --format jsonl`, and remains out of scope for Phase 1.
 
 The application must not silently start fine-tuning, LoRA, reinforcement learning, preference optimization, or any other weight-update process.
 
@@ -1119,13 +1162,13 @@ Budget:
 Commands:
 
 ```bash
-tro ask "question"
-tro run --mode standard --model tiny-default "request"
-tro replay RUN_ID
-tro trace RUN_ID
-tro memory search "query"
-tro profiles list
-tro profiles create
+axia ask "question"
+axia run --mode standard --model tiny-default "request"
+axia replay RUN_ID
+axia trace RUN_ID
+axia memory search "query"
+axia profiles list
+axia profiles create
 ```
 
 ### 20.2 Local Web UI
@@ -1307,13 +1350,15 @@ The controller must never allow retrieved text to alter tool permissions, memory
 
 ```yaml
 app:
-  data_dir: .tro
+  data_dir: .axia
   default_mode: standard
   local_only: true
 
-ollama:
-  base_url: http://localhost:11434
+providers:
+  default_provider: ollama
   default_profile: tiny-default
+  # local Ollama details are translated into crux-providers AdapterParams in the composition root
+  ollama_base_url: http://localhost:11434
 
 orchestration:
   max_calls: 16
@@ -1362,11 +1407,21 @@ MVP stack:
 - Typer for CLI;
 - SQLite for run store;
 - Pydantic for schemas;
-- httpx for Ollama calls;
+- `crux-providers==0.1.1` as the sole LLM/provider dependency during MVP;
+- local development may use a direct dependency reference, such as `crux-providers @ git+...`, when Axia is built against an unreleased Crux commit;
 - SQLite FTS5 for first retrieval backend;
 - optional local web UI with simple HTML/HTMX or React later.
 
-Reason: this keeps implementation fast, inspectable, and easy to modify.
+Reason: this keeps Axia fast, inspectable, provider-agnostic, and easy to merge into Crux Studio. A direct Ollama client would save little or nothing in meaningful runtime because tiny-model latency is dominated by generation and prompt budget, not by a thin provider abstraction. If Ollama-specific performance work is ever needed, it belongs inside `crux-providers` or behind its adapter boundary, not inside the Axia controller.
+
+
+MVP `pyproject.toml` dependency rule:
+
+```toml
+dependencies = [
+  "crux-providers==0.1.1",
+]
+```
 
 A later performance rewrite can move the deterministic controller to Rust if needed.
 
@@ -1375,13 +1430,13 @@ A later performance rewrite can move the deterministic controller to Rust if nee
 ## 26. Package Layout
 
 ```text
-tro/
+axia/
   pyproject.toml
   README.md
   config.yaml
   profiles/
     tiny-default.yaml
-  tro/
+  axia/
     __init__.py
     cli.py
     server.py
@@ -1392,7 +1447,7 @@ tro/
       graph_executor.py
       retry_policy.py
     llm/
-      ollama_adapter.py
+      crux_adapter.py
       model_profile.py
       json_repair.py
     prompts/
@@ -1503,15 +1558,17 @@ def validate_or_repair(node, result):
 
 ## 28. Acceptance Tests
 
-### Gate A: Ollama Adapter Works
+### Gate A: Crux Provider Bridge Works
 
 Pass conditions:
 
 - app can list or verify configured model;
 - app can send a prompt;
 - app can receive text;
-- app can request JSON;
-- timeout and retry behavior is tested.
+- app can request JSON or invoke Axia-owned JSON repair fallback;
+- timeout and retry behavior is tested through the provider boundary;
+- startup smoke test verifies the expected `crux-providers` imports;
+- schema-aware fake provider exercises success and failure paths offline.
 
 ### Gate B: Schema Validation Works
 
@@ -1538,15 +1595,15 @@ Create a fixed benchmark of 20 tasks.
 For each task, compare:
 
 1. single-shot tiny model answer;
-2. TRO quick mode;
-3. TRO standard mode.
+2. Axia quick mode;
+3. Axia standard mode.
 
 Score with the same rubric.
 
 Pass condition:
 
 ```text
-TRO standard mode improves median score over single-shot by at least 20%.
+Axia standard mode improves median score over single-shot by at least 20%.
 ```
 
 ### Gate E: Trace Completeness
@@ -1571,21 +1628,22 @@ Pass conditions:
 
 ## 29. MVP Build Roadmap
 
-### Phase 1: Skeleton and Ollama Adapter
+### Phase 1: Skeleton and Crux Provider Bridge
 
 Deliverables:
 
 - Python package;
 - config loader;
 - model profile loader;
-- Ollama adapter;
-- simple `tro ask` command;
+- `llm/crux_adapter.py` bridge around `ProviderFactory`, `ChatRequest`, and model profile translation;
+- Axia-owned deterministic schema-aware fake provider;
+- simple `axia ask` command;
 - run manifest creation.
 
 Acceptance:
 
 - one prompt returns one answer;
-- manifest records raw request and response.
+- manifest records raw request, response, provider metadata, and selected model profile.
 
 ### Phase 2: Schemas and Prompt Pack
 
@@ -1674,7 +1732,7 @@ Acceptance:
 
 ## 31. Key Differentiator
 
-TRO is not just a prompt chain.
+Axia is not just a prompt chain.
 
 A prompt chain says:
 
@@ -1682,7 +1740,7 @@ A prompt chain says:
 Do step 1, then step 2, then step 3.
 ```
 
-TRO says:
+Axia says:
 
 ```text
 Build a task contract.
@@ -1706,11 +1764,11 @@ The first useful vertical slice should be:
 
 ```text
 User asks for a technical explanation or spec.
-TRO canonicalizes the request.
-TRO builds a constitution.
-TRO creates a 6-node graph.
-TRO drafts, critiques, repairs, verifies, and finalizes.
-TRO stores the run trace.
+Axia canonicalizes the request.
+Axia builds a constitution.
+Axia creates a 6-node graph.
+Axia drafts, critiques, repairs, verifies, and finalizes.
+Axia stores the run trace.
 User can inspect why the final answer is better than the first draft.
 ```
 
@@ -1723,20 +1781,23 @@ This is enough to prove the core product claim before adding tools, code executi
 Use this prompt to hand the spec to a coding agent:
 
 ```text
-Build the MVP for Tiny Recursive Orchestrator from the attached specification.
+Build the MVP for Axia from the attached specification.
 
 Hard requirements:
-- This is not machine-learning software. Implement it as a deterministic local agentic harness around Ollama-compatible tiny models.
+- This is not machine-learning software. Implement it as a deterministic local agentic harness around provider-backed tiny models. Local Ollama is the default runtime profile, but the core must be provider-agnostic.
 - Do not train, fine-tune, update weights, run LoRA, run reinforcement learning, or silently export training data.
 - Python 3.12.
 - Local-only by default.
-- Ollama adapter through configurable base_url and model profile.
+- Use `crux-providers==0.1.1` as the sole LLM/provider dependency. Do not implement an Ollama client, OpenAI client, Anthropic client, Gemini client, retry wrapper, streaming wrapper, key resolver, or provider registry inside Axia.
+- Implement `llm/crux_adapter.py` as a thin bridge around `ProviderFactory`, `ChatRequest`, and model profile translation.
+- The Axia controller must receive provider/catalog dependencies through constructor injection. The CLI/server composition root may instantiate `crux-providers` with a local Ollama profile, but the core controller must remain provider-agnostic.
+- The fake provider must be deterministic and schema-aware, not a simple mock. It must support both success and failure paths, including malformed JSON and timeout-like failures, so retry, repair, scoring, and manifest logic can be tested offline.
 - Deterministic run controller with replayable manifest.
 - Pydantic schemas for canonical request, constitution, work graph, node result, scorecard, and memory record.
 - Standard-mode graph must execute: canonicalize -> constitution -> retrieve -> plan -> draft -> critique -> repair -> verify -> final -> memory.
 - All model outputs used by the controller must be JSON parsed and schema validated.
 - Store all runs, nodes, artifacts, scorecards, errors, memory records, golden examples, and training slices in SQLite.
-- Provide CLI commands: tro ask, tro run, tro trace, tro replay, tro profiles list, tro memory search.
+- Provide CLI commands: axia ask, axia run, axia trace, axia replay, axia profiles list, axia memory search.
 - Include tests for schema validation, retry policy, deterministic replay, and bounded recursion.
 
 Do not add cloud dependencies.
