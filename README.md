@@ -1,7 +1,7 @@
 
 ![alt text](https://raw.githubusercontent.com/justinlietz93/Axia_Hierarchical_Reasoning/main/assets/axia_banner.png)
 
-# Axia: Hierarchical Reasoning
+# Hierarchical Reasoning Engine for LLMs
 
 Axia is a planned local-first LLM utility for improving small-model output through deterministic hierarchical reasoning. It treats the model as one narrow semantic operator inside a controlled system, not as the whole system.
 
