@@ -87,7 +87,7 @@ ARCHITECTURE_STANDARDS.md         Axia-specific architecture standards
 ADRs/                             Architecture decision records
 docs/SPEC-1.md                    Reasoning-first MVP clarification
 docs/axia_spec.md                 Detailed Axia specification
-docs/original_inspiration/        Source inspiration material
+docs/archive/                     Reference reports and original inspiration material
 ```
 
 ## Development direction
