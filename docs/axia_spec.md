@@ -3,7 +3,7 @@
 **Project name:** Axia  
 **Target runtime:** Provider-agnostic, local-first model execution through `crux-providers`; default profile routes to local Ollama-compatible small models  
 **Spec version:** 0.6  
-**Primary objective:** Make tiny local models produce substantially better user-facing results by surrounding them with deterministic planning, memory, validation, retry, critique, and synthesis loops.  
+**Primary objective:** Make tiny local models produce substantially better user-facing results by surrounding them with deterministic reasoning decomposition, scoped context assembly, validation, retry, critique, scoring, and synthesis loops.  
 **Architecture pattern:** Tiny recursive orchestration. Use **Axia** as the product name, package name, and CLI name.
 
 ---
@@ -12,9 +12,9 @@
 
 Axia is a local-first application that turns a tiny provider-backed model into a structured worker inside a deterministic orchestration system. The default runtime profile is local Ollama through `crux-providers`, but the controller is provider-agnostic from the first build.
 
-Axia is not machine-learning software. It does not train a model, update weights, perform reinforcement learning, run LoRA jobs, or claim that the underlying model has learned new capability. It is an agentic harness: a deterministic controller that surrounds a weak local model with typed steps, memory, validation, scoring, repair, and replay.
+Axia is not machine-learning software or durable memory software. It does not train a model, update weights, perform reinforcement learning, run LoRA jobs, own long-term user memory, or claim that the underlying model has learned new capability. It is an agentic harness: a deterministic controller that surrounds a weak local model with typed reasoning steps, run-local context, validation, scoring, repair, and replay.
 
-The model is not treated as a general-purpose genius. It is treated as a small, noisy semantic operator. The application supplies everything the model is bad at: durable memory, task decomposition, context packing, validation, scoring, retry control, tool routing, and final synthesis.
+The model is not treated as a general-purpose genius. It is treated as a small, noisy semantic operator. The application supplies reasoning-improvement systems around the model: task decomposition, scoped context packing, artifact validation, scoring, retry control, critique and repair, verification, and final synthesis.
 
 The user sees one assistant. Internally, Axia runs a controlled sequence of micro-steps. Each step asks the model for a narrow structured output, validates that output, stores it, and uses it to construct the next step. The result should feel like a larger, more careful model because the final answer is produced by an accumulated evidence trail rather than by one fragile completion.
 
@@ -22,7 +22,7 @@ The closest inherited patterns from the supplied repositories are:
 
 1. **Fixed staged refinement** from `breakthrough_generator`: a known sequence of clarification, divergence, deep dive, critique, merge, implementation, novelty check, and elaboration.
 2. **Hierarchical planning** from `hierarchical_reasoning_generator`: project constitution, phase/task/step decomposition, checkpointing, QA validation, executor/validator separation, and resumable plans.
-3. **RCoT-style orchestration** from the diagram: recursive self-critique, scoring thresholds, memory insertion, retrieval, and periodic improvement.
+3. **RCoT-style orchestration** from the diagram: recursive self-critique, scoring thresholds, scoped retrieval, candidate emission, and periodic reasoning improvement.
 
 Axia combines these into a smaller, faster, local-first system optimized for weak models.
 
@@ -44,7 +44,7 @@ user request
   -> scoring
   -> refinement loops
   -> final synthesis
-  -> memory update
+  -> memory candidate projection
 ```
 
 The final answer must be grounded in stored intermediate artifacts and scored against explicit rubrics.
@@ -78,8 +78,8 @@ Axia may make a tiny model appear more capable, but it must not pretend the mode
 The correct product claim is:
 
 ```text
-This app improves small-model output by deterministic orchestration, external memory,
-validation, recursive refinement, and tool use.
+This app improves small-model output by deterministic reasoning decomposition,
+scoped context assembly, validation, scoring, bounded refinement, and tool use.
 ```
 
 The incorrect claim is:
@@ -107,12 +107,13 @@ The MVP must include:
 - Structured JSON output validation.
 - Scoring and retry gates.
 - Local run database.
-- Local memory/RAG store.
+- Context provider boundary and scoped context assembly.
 - Final answer synthesizer.
 - CLI interface.
 - Minimal local web UI.
 - Complete run trace visible to the user.
 - Axia-owned schema-aware fake `LLMProvider` for deterministic offline controller tests.
+- Reasoning-improvement benchmark against a single-shot baseline.
 
 ### 5.2 Later Scope
 
@@ -123,7 +124,8 @@ Later versions may add:
 - Browser/search connectors.
 - Codebase editing mode.
 - Document generation mode.
-- Curated golden-example and training-slice database for retrieval, evaluation, prompt improvement, and optional user-approved export.
+- Adapters for external memory, retrieval, data-curation, and training-export modules.
+- Curated reasoning-example and training-slice candidate export for evaluation or external training modules.
 - Voice mode.
 - Multi-user server mode.
 
@@ -155,9 +157,11 @@ The MVP must not include:
 | Evidence pack | Retrieved context and intermediate artifacts supplied to a micro-agent. |
 | Scorecard | Numeric and symbolic evaluation of an artifact against a rubric. |
 | Refinement loop | Bounded retry or repair cycle triggered by a failed scorecard. |
-| Memory | Local persistent store of accepted facts, patterns, user preferences, run summaries, and reusable plans. |
-| Golden example | A user-approved high-quality input/output pair or intermediate artifact saved for future retrieval, evaluation, or prompt improvement. |
-| Training slice | A structured record of a real interaction segment, including request, context, model output, corrections, scorecard, and accepted answer. It is a database artifact, not a weight update. |
+| Run-local context | Context state assembled, cached, summarized, or refined only to complete and replay the current reasoning run. |
+| Context provider | Boundary capability that supplies scoped external context. It may be backed by a memory module, files, search, or another retrieval system. |
+| Memory candidate | Trace-derived proposal emitted to an external memory module. It is not a durable memory write. |
+| Reasoning example candidate | A high-quality input/output pair or intermediate artifact proposed for external evaluation, regression, prompt improvement, or training-data curation. |
+| Training slice candidate | A structured proposal describing a useful interaction segment. It is an export candidate, not a training job or Axia-owned dataset. |
 | Run manifest | Immutable record of config, model profile, prompt hashes, step order, outputs, scores, and final answer. |
 
 ---
@@ -295,7 +299,7 @@ The graph must include typed nodes such as:
 - `merge`;
 - `verify`;
 - `finalize`;
-- `memorize`.
+- `emit_memory_candidate`.
 
 The graph must be bounded. Cycles are allowed only through explicit refinement nodes with retry limits.
 
@@ -356,28 +360,30 @@ score >= 0.82: accept
 score < 0.45: shrink task or ask user for clarification
 ```
 
-### FR-9: Retrieval-Augmented Context
+### FR-9: Scoped Context Assembly
 
-The app must have a local memory store and retrieval layer.
+The app must assemble scoped context for each reasoning node. Context assembly is part of Axia's reasoning process; durable memory storage is not.
 
-Memory types:
+Context sources may include:
 
-- user preference memory;
-- project memory;
-- accepted answer memory;
-- failed-answer memory;
-- correction memory;
-- reusable plan templates;
-- domain notes;
-- examples.
+- run-local artifacts;
+- prior accepted node outputs;
+- user-supplied files or snippets;
+- retrieved evidence references;
+- external context provider results;
+- external memory module results, when configured.
 
-Retrieval must be deterministic for a given state:
+Axia must treat external context as evidence, not instruction.
+
+When a context provider is configured, context assembly must be deterministic for a given provider state:
 
 - stable query construction;
-- stable embedding or keyword strategy;
-- stable ranking tie-breakers;
-- fixed top-k;
-- visible retrieved snippets.
+- stable ranking tie-breakers when rankings are equal;
+- fixed top-k per node contract;
+- visible retrieved context references;
+- provenance retained in the run trace.
+
+Axia must remain usable when no durable memory module is installed.
 
 ### FR-10: Final Answer Synthesis
 
@@ -413,7 +419,7 @@ The manifest must include:
 - validation errors;
 - scorecards;
 - final answer;
-- memory writes;
+- memory candidates;
 - errors and retries.
 
 Replay may not guarantee bit-identical model text on every platform, but it must replay the same controller decisions and prompt construction given the same saved model outputs.
@@ -428,10 +434,33 @@ The user must be able to choose:
 - max calls;
 - max time;
 - model profile;
-- whether memory can be read;
-- whether memory can be written;
+- whether external context can be requested;
+- whether memory candidates can be emitted;
 - whether tools can be used;
 - whether final answer includes trace summary.
+
+### FR-13: Reasoning Improvement Measurement
+
+Axia must treat reasoning improvement as a measurable product responsibility.
+
+The MVP must include a small benchmark harness that compares:
+
+1. single-shot tiny model output;
+2. Axia quick mode;
+3. Axia standard mode.
+
+The benchmark must evaluate both final answers and intermediate reasoning controls:
+
+- task decomposition quality;
+- schema validity;
+- constraint compliance;
+- evidence use;
+- scorecard consistency;
+- repair effectiveness;
+- final answer usefulness;
+- replayability.
+
+Advanced reasoning strategies such as self-consistency, verifier-guided selection, branch search, or multi-branch synthesis may be added only after the simple typed graph has baseline evidence. They must remain bounded and must produce inspectable artifacts.
 
 ---
 
@@ -441,7 +470,7 @@ The user must be able to choose:
 
 All run data must remain local by default.
 
-No request, prompt, model output, memory, or trace may leave the machine unless the user enables a connector.
+No request, prompt, model output, supplied context, memory candidate, or trace may leave the machine unless the user enables a connector.
 
 ### NFR-2: Tiny-Model Efficiency
 
@@ -468,7 +497,7 @@ The app must control:
 - graph traversal order;
 - scoring thresholds;
 - retry limits;
-- memory ranking tie-breakers.
+- context ranking tie-breakers.
 
 ### NFR-4: Bounded Recursion
 
@@ -480,8 +509,8 @@ Required limits:
 - maximum retries per node;
 - maximum total model calls;
 - maximum wall-clock time;
-- maximum memory writes;
 - maximum retrieved chunks;
+- maximum memory candidates;
 - maximum final synthesis passes.
 
 ### NFR-5: Inspectability
@@ -527,7 +556,7 @@ Disallowed as a required product feature:
            ├──► Score Engine
            ├──► Refinement Controller
            ├──► Final Synthesizer
-           └──► Memory Writer
+           └──► Memory Candidate Emitter
 
 ┌─────────────────────┐       ┌─────────────────────────────┐
 │ Crux Adapter Bridge │◄─────►│ crux-providers              │
@@ -535,7 +564,7 @@ Disallowed as a required product feature:
 └─────────────────────┘       └─────────────────────────────┘
 
 ┌─────────────────────┐       ┌─────────────────────┐
-│ SQLite Run Store    │       │ Vector/Keyword RAG  │
+│ SQLite Run Store    │       │ Context Provider    │
 └─────────────────────┘       └─────────────────────┘
 ```
 
@@ -557,7 +586,7 @@ NEW
   -> NEXT_NODE
   -> FINAL_SYNTHESIS
   -> FINAL_VALIDATE
-  -> MEMORY_UPDATE
+  -> MEMORY_CANDIDATES
   -> COMPLETE
 ```
 
@@ -591,7 +620,7 @@ N6 critique_answer depends_on N5,N2
 N7 repair_answer depends_on N5,N6
 N8 verify_answer depends_on N7,N2,N3
 N9 final_synthesis depends_on N7,N8
-N10 memory_update depends_on N9
+N10 emit_memory_candidates depends_on N9
 ```
 
 Deep mode may expand into parallel branches:
@@ -636,9 +665,9 @@ Purpose: generate work graph nodes.
 
 This role descends from the phase/task/step generation pattern.
 
-### 12.4 Retriever Agent
+### 12.4 Context Assembler Agent
 
-Purpose: turn the constitution into retrieval queries and summarize retrieved context.
+Purpose: turn the constitution into scoped context requests and summarize returned evidence for the current run.
 
 ### 12.5 Executor Agent
 
@@ -680,11 +709,11 @@ Purpose: produce the final user-facing response.
 
 It must not introduce new major claims unless supported by accepted artifacts.
 
-### 12.10 Memory Curator Agent
+### 12.10 Memory Candidate Agent
 
-Purpose: propose memory writes.
+Purpose: propose memory candidates for an external memory module.
 
-Human-approval policy is configurable.
+This agent does not persist memory. It emits trace-derived candidates with source run IDs, source artifact IDs, scores, caveats, and proposed scope.
 
 ---
 
@@ -694,7 +723,7 @@ Axia must distinguish **controller determinism** from **model determinism**.
 
 ### 13.1 Controller Determinism
 
-For the same run manifest and saved model outputs, the app must produce the same graph traversal, validation decisions, score comparisons, memory writes, and final selected artifact.
+For the same run manifest and saved model outputs, the app must produce the same graph traversal, validation decisions, score comparisons, memory candidates, and final selected artifact.
 
 ### 13.2 Model Determinism
 
@@ -717,7 +746,7 @@ Every prompt must be built from canonical JSON serialization:
 - sorted keys;
 - stable newline rules;
 - no ambient timestamps inside prompts unless required;
-- no nondeterministic ordering of memory snippets;
+- no nondeterministic ordering of context snippets;
 - all prompt templates versioned.
 
 ---
@@ -741,7 +770,7 @@ Every prompt must be built from canonical JSON serialization:
   "work_graph": {},
   "node_results": [],
   "final_answer": "string",
-  "memory_writes": [],
+  "memory_candidates": [],
   "metrics": {}
 }
 ```
@@ -755,7 +784,7 @@ Every prompt must be built from canonical JSON serialization:
   "user_visible_goal": "string",
   "constraints": ["string"],
   "non_goals": ["string"],
-  "allowed_tools": ["none|memory|filesystem|web|shell|code_runner"],
+  "allowed_tools": ["none|context_provider|filesystem|web|shell|code_runner"],
   "required_evidence": ["string"],
   "quality_rubric": [
     {
@@ -779,7 +808,7 @@ Every prompt must be built from canonical JSON serialization:
   "nodes": [
     {
       "node_id": "N1",
-      "type": "clarify|retrieve|analyze|draft|critique|repair|merge|verify|finalize|memorize",
+      "type": "clarify|retrieve|analyze|draft|critique|repair|merge|verify|finalize|emit_memory_candidate",
       "title": "string",
       "depends_on": [],
       "agent": "string",
@@ -829,18 +858,20 @@ Every prompt must be built from canonical JSON serialization:
 }
 ```
 
-### 14.6 Memory Record
+### 14.6 Memory Candidate Projection
 
 ```json
 {
-  "memory_id": "string",
+  "candidate_id": "string",
   "type": "preference|project|fact|pattern|correction|plan_template|failure_case",
-  "scope": "global|project|conversation|run",
+  "proposed_scope": "global|project|conversation|run",
   "content": "string",
   "source_run_id": "string",
+  "source_artifact_ids": ["string"],
   "confidence": 0.0,
+  "reason": "string",
+  "caveats": ["string"],
   "created_at": "iso8601",
-  "last_used_at": "iso8601|null",
   "tags": ["string"]
 }
 ```
@@ -908,14 +939,14 @@ The context packer must build each prompt from:
 1. The node instruction.
 2. The relevant constitution subset.
 3. Required prior artifacts only.
-4. Top retrieved memory snippets.
+4. Scoped context records from configured context providers.
 5. The exact output schema.
 
 The context packer must exclude:
 
 - unrelated prior nodes;
 - full run logs;
-- redundant memory;
+- redundant context;
 - long rejected artifacts unless needed for repair;
 - raw hidden reasoning text.
 
@@ -936,35 +967,36 @@ node_type_budgets:
 
 ---
 
-## 17. Memory, Golden Examples, and Training Slices
+## 17. Reasoning Improvement Artifacts And Export Candidates
 
-### 17.1 Non-ML Learning Boundary
+### 17.1 Reasoning Improvement Boundary
 
-Axia's "learning" means improved orchestration through stored local artifacts. It does not mean model training.
+Axia's improvement path is reasoning-system improvement. It does not mean durable memory ownership, model training, autonomous profile learning, or hidden self-modification.
 
-The application may store and retrieve:
+Axia may retain run-local and replayable artifacts that show which reasoning controls improved an answer:
 
-- accepted answers;
-- user corrections;
-- golden examples;
+- accepted artifacts;
+- rejected artifacts with rejection reasons;
 - failed drafts with scorecards;
-- repair instructions that worked;
-- reusable decomposition patterns;
-- project-specific facts;
-- preferred answer styles;
-- live training slices from real interactions.
+- repair instructions that worked in the current run;
+- decomposition patterns observed in a run;
+- verification results;
+- user corrections attached to a run;
+- memory candidates;
+- reasoning example candidates;
+- training slice candidates.
 
-These records improve future runs because the orchestrator can retrieve them, compare against them, score against them, or use them as examples in prompts. The underlying model weights remain unchanged.
+These records improve Axia by making the reasoning path measurable, replayable, and available to external modules. A memory module may persist useful candidates. A data-curation module may turn accepted candidates into datasets. Axia itself remains the reasoning orchestration module.
 
-### 17.2 Golden Example Store
+### 17.2 Reasoning Example Candidate
 
-A golden example is a user-approved artifact that represents a good solution pattern.
+A reasoning example candidate is a trace-derived artifact that may be useful for external evaluation, regression testing, prompt improvement, or training-data curation.
 
-Golden examples must be stored as structured database records:
+Reasoning example candidates should be emitted as structured projections:
 
 ```yaml
-golden_example:
-  id: uuid
+reasoning_example_candidate:
+  candidate_id: uuid
   project_id: string|null
   domain_tags: [string]
   task_type: string
@@ -974,30 +1006,26 @@ golden_example:
   why_good: string
   scorecard_id: uuid|null
   source_run_id: uuid
+  source_artifact_ids: [uuid]
   created_at: datetime
-  approved_by_user: true
+  proposed_for:
+    - regression
+    - prompt_improvement
+    - evaluator_calibration
+    - external_export
 ```
 
-Golden examples may be used for:
+Reasoning example candidates are not automatically persisted as durable memory and must not trigger automatic fine-tuning.
 
-- retrieval into future context packs;
-- regression tests;
-- prompt template improvement;
-- evaluator calibration;
-- synthetic dry-run comparisons;
-- optional user-approved export.
+### 17.3 Training Slice Candidate
 
-Golden examples must not trigger automatic fine-tuning.
-
-### 17.3 Live Training Slice Store
-
-A training slice is a compact record of an interaction segment that may be useful later.
+A training slice candidate is a compact trace-derived proposal for an external data-curation or training module.
 
 It should include:
 
 ```yaml
-training_slice:
-  id: uuid
+training_slice_candidate:
+  candidate_id: uuid
   source_run_id: uuid
   node_id: string|null
   user_request: string
@@ -1010,45 +1038,46 @@ training_slice:
   accepted_output: string|null
   score_before: number|null
   score_after: number|null
-  approved_for_reuse: boolean
-  approved_for_export: boolean
+  proposed_for_reuse: boolean
+  proposed_for_export: boolean
   created_at: datetime
 ```
 
-Training slices are database artifacts. They are not training jobs.
+Training slice candidates are not training jobs, not exported datasets, and not durable memory records.
 
-### 17.4 Reflection Pipeline
+### 17.4 Reasoning Reflection Artifact
 
-After a run, Axia may create a reflection artifact:
+After a run, Axia may create a reasoning reflection artifact:
 
 ```text
 What did the user ask?
 What steps improved the answer?
 What failed?
-What correction should be remembered?
-What plan template can be reused?
-Should any golden examples or training slices be proposed?
+Which reasoning strategy helped?
+Which repair instruction worked?
+Which verification check caught a problem?
+Should any memory candidates, reasoning examples, or training slice candidates be emitted?
 ```
 
-This is stored only if policy allows.
+This artifact exists to improve the reasoning system and to inform external modules through explicit projections.
 
 ### 17.5 Export Boundary
 
-A later `training_export` feature may export curated JSONL examples from golden examples or training slices, but only after explicit user approval.
+A later external `training_export` module may export curated JSONL examples from reasoning example candidates or training slice candidates, but only after explicit user approval.
 
-The export feature is not a trainer. It only writes files for external use.
+The export module is not Axia and is not a trainer. It only writes files for external use.
 
-MVP stores these records locally only. A future export path should be an explicit CLI action, such as `axia export --format jsonl`, and remains out of scope for Phase 1.
+MVP may store these projections in the run manifest or run store for traceability. Durable reuse belongs to external memory, evaluation, or data-curation modules.
 
 The application must not silently start fine-tuning, LoRA, reinforcement learning, preference optimization, or any other weight-update process.
 
 Policies:
 
 ```yaml
-memory_write_policy: ask|auto_project|auto_all|off
-golden_example_policy: ask|manual_only|off
-training_slice_policy: ask|auto_project|off
-memory_read_policy: on|off|project_only
+emit_memory_candidates: ask|auto_project|off
+reasoning_example_candidate_policy: ask|manual_only|off
+training_slice_candidate_policy: ask|auto_project|off
+external_context_policy: on|off|project_only
 export_policy: explicit_user_approval_only
 ```
 
@@ -1123,7 +1152,7 @@ Goal: good answer with trace.
 Graph:
 
 ```text
-canonicalize -> constitution -> retrieve -> plan -> execute -> critique -> repair -> verify -> final -> memory
+canonicalize -> constitution -> retrieve -> plan -> execute -> critique -> repair -> verify -> final -> memory_candidates
 ```
 
 Budget:
@@ -1144,7 +1173,7 @@ canonicalize -> constitution -> retrieve -> plan
   -> branch: counterexample
   -> branch: implementation
   -> branch: evidence
-  -> merge -> critique -> repair -> verify -> final -> memory
+  -> merge -> critique -> repair -> verify -> final -> memory_candidates
 ```
 
 Budget:
@@ -1166,7 +1195,7 @@ axia ask "question"
 axia run --mode standard --model tiny-default "request"
 axia replay RUN_ID
 axia trace RUN_ID
-axia memory search "query"
+axia benchmark run --suite baseline
 axia profiles list
 axia profiles create
 ```
@@ -1177,7 +1206,7 @@ Pages:
 
 - Chat/Run page;
 - Run trace page;
-- Memory browser;
+- Artifact and trace browser;
 - Model profile settings;
 - Prompt pack settings;
 - Evaluation dashboard.
@@ -1189,7 +1218,7 @@ The run page must show:
 - scorecards;
 - accepted artifacts;
 - final answer;
-- memory write proposals.
+- memory candidates.
 
 ### 20.3 Trace Display
 
@@ -1198,7 +1227,7 @@ The trace must be readable as:
 ```text
 1. Understood request as: ...
 2. Built task contract: ...
-3. Retrieved these local memories: ...
+3. Assembled these scoped context records: ...
 4. Drafted answer: score 0.73
 5. Repaired missing constraint: score 0.86
 6. Final answer accepted.
@@ -1219,8 +1248,8 @@ Request:
   "request": "string",
   "mode": "quick|standard|deep",
   "model_profile": "tiny-default",
-  "memory_read": true,
-  "memory_write": "ask",
+  "external_context": true,
+  "emit_memory_candidates": "ask|off",
   "max_calls": 16,
   "max_seconds": 300
 }
@@ -1259,17 +1288,18 @@ Server-sent events:
 
 Returns human-readable trace and machine-readable artifacts.
 
-### 21.5 Memory Search
+### 21.5 Get Memory Candidates
 
-`POST /memory/search`
+`GET /runs/{run_id}/memory-candidates`
 
-Request:
+Returns trace-derived memory candidates emitted by the reasoning run. This endpoint does not search or mutate durable memory.
+
+Response:
 
 ```json
 {
-  "query": "string",
-  "scope": "global|project|conversation",
-  "top_k": 5
+  "run_id": "string",
+  "candidates": []
 }
 ```
 
@@ -1294,19 +1324,19 @@ prompt_templates(name, version, template_text, template_hash)
 nodes(run_id, node_id, type, status, attempt_count, result_json)
 artifacts(artifact_id, run_id, node_id, type, content_json, content_hash)
 scorecards(scorecard_id, run_id, node_id, score_json)
-memory(memory_id, type, scope, content, metadata_json, created_at, last_used_at)
-retrieval_log(run_id, node_id, query, result_ids_json)
+memory_candidates(candidate_id, run_id, type, proposed_scope, content_json, score_json, created_at)
+context_log(run_id, node_id, provider, query, result_refs_json)
 errors(error_id, run_id, node_id, error_type, message, created_at)
 ```
 
-### 22.2 Vector Store
+### 22.2 Context Index
 
-MVP may use one of two approaches:
+Axia does not own durable memory search. If no external context provider is installed, MVP may use a run-local or project-local context index for evidence assembly:
 
-1. SQLite FTS5 keyword retrieval only.
-2. SQLite plus a local embedding index.
+1. SQLite FTS5 keyword retrieval over explicitly supplied context.
+2. SQLite plus a local embedding index over explicitly supplied context.
 
-The retrieval interface must hide the implementation so the backend can change later.
+The context provider interface must hide the implementation so the backend can change later or be replaced by a separate memory/retrieval module.
 
 ---
 
@@ -1409,7 +1439,7 @@ MVP stack:
 - Pydantic for schemas;
 - `crux-providers==0.1.1` as the sole LLM/provider dependency during MVP;
 - local development may use a direct dependency reference, such as `crux-providers @ git+...`, when Axia is built against an unreleased Crux commit;
-- SQLite FTS5 for first retrieval backend;
+- optional SQLite FTS5 for run-local or project-local context indexing;
 - optional local web UI with simple HTML/HTMX or React later.
 
 Reason: this keeps Axia fast, inspectable, provider-agnostic, and easy to merge into Crux Studio. A direct Ollama client would save little or nothing in meaningful runtime because tiny-model latency is dominated by generation and prompt budget, not by a thin provider abstraction. If Ollama-specific performance work is ever needed, it belongs inside `crux-providers` or behind its adapter boundary, not inside the Axia controller.
@@ -1460,18 +1490,18 @@ axia/
         critic.txt
         repair.txt
         finalizer.txt
-        memory_curator.txt
+        memory_candidate.txt
     schemas/
       run_manifest.py
       constitution.py
       work_graph.py
       artifacts.py
       scorecard.py
-      memory.py
-    memory/
-      store.py
-      retriever.py
-      curator.py
+      memory_candidate.py
+    context/
+      packer.py
+      provider_port.py
+      candidate_emitter.py
     scoring/
       deterministic_checks.py
       model_critic.py
@@ -1487,7 +1517,8 @@ axia/
       test_schema_validation.py
       test_work_graph.py
       test_retry_policy.py
-      test_memory.py
+      test_context_boundary.py
+      test_memory_candidates.py
 ```
 
 ---
@@ -1517,8 +1548,8 @@ def run(user_request, mode, profile):
     if final_score.decision != "accept":
         final = repair_final(final, final_score)
 
-    proposed_memories = curate_memory(run, final)
-    apply_memory_policy(proposed_memories)
+    memory_candidates = emit_memory_candidates(run, final)
+    record_memory_candidates(run, memory_candidates)
     complete_run(run, final)
     return final
 ```
@@ -1613,7 +1644,7 @@ Pass conditions:
 - every final answer links to accepted artifacts;
 - every accepted artifact has a scorecard;
 - every failed node has an error record;
-- every memory write links to source run.
+- every memory candidate links to source run and source artifacts.
 
 ### Gate F: Bounded Recursion
 
@@ -1673,19 +1704,21 @@ Acceptance:
 - a run completes through all states;
 - trace shows every node.
 
-### Phase 4: Memory and Retrieval
+### Phase 4: Context Boundary and Reasoning Candidates
 
 Deliverables:
 
-- SQLite memory table;
-- FTS retrieval;
-- memory curator;
-- memory write policies.
+- context provider port;
+- scoped context assembly from supplied evidence;
+- memory candidate projection;
+- reasoning example candidate projection;
+- contradiction tests for context and memory-boundary leaks.
 
 Acceptance:
 
-- accepted run can write memory;
-- later run retrieves relevant memory.
+- a run can complete without a memory module;
+- a run can consume scoped context when a context provider is configured;
+- emitted memory candidates never become durable writes inside Axia.
 
 ### Phase 5: Local Web UI
 
@@ -1694,7 +1727,7 @@ Deliverables:
 - run page;
 - trace page;
 - profile settings;
-- memory browser.
+- artifact and candidate browser.
 
 Acceptance:
 
@@ -1722,7 +1755,7 @@ Acceptance:
 | Tiny model emits malformed JSON | JSON mode, schema repair, short prompts, examples, retries. |
 | Orchestration becomes slow | quick/standard/deep modes, max call budget, streaming status. |
 | Recursive loops waste time | hard recursion limits and stop conditions. |
-| Memory stores bad facts | confidence scores, source links, user approval, correction memory. |
+| External context injects stale or false facts | provenance, context scope, source links, contradiction checks, and explicit caveats. |
 | Critic model rubber-stamps bad output | deterministic checks plus model critique; threshold tuning; benchmark tasks. |
 | Final answer invents unsupported claims | finalizer receives accepted artifacts only; verification node checks support. |
 | Prompt injection through retrieved text | retrieved context marked as untrusted; controller permissions cannot be changed by retrieved text. |
@@ -1750,7 +1783,7 @@ Validate and score each artifact.
 Repair failures.
 Persist evidence.
 Synthesize only from accepted artifacts.
-Learn from accepted traces.
+Emit trace-derived improvement candidates.
 Replay the run.
 ```
 
@@ -1793,16 +1826,16 @@ Hard requirements:
 - The Axia controller must receive provider/catalog dependencies through constructor injection. The CLI/server composition root may instantiate `crux-providers` with a local Ollama profile, but the core controller must remain provider-agnostic.
 - The fake provider must be deterministic and schema-aware, not a simple mock. It must support both success and failure paths, including malformed JSON and timeout-like failures, so retry, repair, scoring, and manifest logic can be tested offline.
 - Deterministic run controller with replayable manifest.
-- Pydantic schemas for canonical request, constitution, work graph, node result, scorecard, and memory record.
-- Standard-mode graph must execute: canonicalize -> constitution -> retrieve -> plan -> draft -> critique -> repair -> verify -> final -> memory.
+- Pydantic schemas for canonical request, constitution, work graph, node result, scorecard, and memory candidate.
+- Standard-mode graph must execute: canonicalize -> constitution -> retrieve -> plan -> draft -> critique -> repair -> verify -> final -> memory_candidates.
 - All model outputs used by the controller must be JSON parsed and schema validated.
-- Store all runs, nodes, artifacts, scorecards, errors, memory records, golden examples, and training slices in SQLite.
-- Provide CLI commands: axia ask, axia run, axia trace, axia replay, axia profiles list, axia memory search.
-- Include tests for schema validation, retry policy, deterministic replay, and bounded recursion.
+- Store all runs, nodes, artifacts, scorecards, errors, context logs, and memory candidates in SQLite.
+- Provide CLI commands: axia ask, axia run, axia trace, axia replay, axia profiles list, axia benchmark run.
+- Include tests for schema validation, retry policy, deterministic replay, bounded recursion, and reasoning-improvement benchmark comparison.
 
 Do not add cloud dependencies.
 Do not add fine-tuning or weight-update features.
-Do not treat golden examples or training slices as anything more than local database records unless the user explicitly exports them.
+Do not make Axia own durable memory, memory search, golden-example stores, or training-slice stores. Emit candidates for external modules instead.
 Do not add unrestricted shell execution.
 Do not make ungrounded claims that the tiny model itself became smarter.
 ```
