@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "axia"
+version = "0.1.0a0"
+description = "Local-first hierarchical reasoning orchestration for small language models."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+  { name = "Justin Lietz" }
+]
+keywords = [
+  "llm",
+  "reasoning",
+  "orchestration",
+  "local-first",
+  "agents"
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Typing :: Typed"
+]
+dependencies = []
+
+[project.optional-dependencies]
+crux = [
+  "crux-providers==0.1.1"
+]
+
+[project.scripts]
+axia = "axia.boundary.presentation.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/justinlietz93/Axia_Hierarchical_Reasoning"
+Repository = "https://github.com/justinlietz93/Axia_Hierarchical_Reasoning"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/axia"]

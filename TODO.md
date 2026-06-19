@@ -18,30 +18,30 @@ Each task cites the ADRs that justify it. Do not treat this as a generic app bac
 
 ADRs: `ADR-0001`, `ADR-0002`, `ADR-0009`
 
-- [ ] Step 0.1.1 - Treat Axia as a reasoning orchestration module, not a general agent platform.
-- [ ] Step 0.1.2 - Keep durable memory, memory search, promotion, forgetting, and profile learning outside Axia.
-- [ ] Step 0.1.3 - Keep model training, fine-tuning, LoRA, RLHF, and weight updates outside Axia.
-- [ ] Step 0.1.4 - Define all external capabilities as boundary ports before admitting adapters.
+- [x] Step 0.1.1 - Treat Axia as a reasoning orchestration module, not a general agent platform.
+- [x] Step 0.1.2 - Keep durable memory, memory search, promotion, forgetting, and profile learning outside Axia.
+- [x] Step 0.1.3 - Keep model training, fine-tuning, LoRA, RLHF, and weight updates outside Axia.
+- [x] Step 0.1.4 - Define all external capabilities as boundary ports before admitting adapters.
 - [ ] Step 0.1.5 - Add an architecture check or review checklist item for memory-boundary leaks.
 
 ### Task 0.2 - Establish Project Skeleton
 
 ADRs: `ADR-0001`, `ADR-0008`
 
-- [ ] Step 0.2.1 - Create Python package layout under `src/axia/`.
-- [ ] Step 0.2.2 - Add `pyproject.toml` with Python version, package metadata, and initial test dependencies.
+- [x] Step 0.2.1 - Create Python package layout under `src/axia/`.
+- [x] Step 0.2.2 - Add `pyproject.toml` with Python version, package metadata, and initial test dependencies.
 - [ ] Step 0.2.3 - Add top-level packages for source, observation, invariant, formation, operation, projection, boundary, policy, and shared only as they become necessary.
-- [ ] Step 0.2.4 - Add a minimal test runner command.
+- [x] Step 0.2.4 - Add a minimal test runner command.
 - [ ] Step 0.2.5 - Add import-boundary notes or a future import-linter task matching `ARCHITECTURE_STANDARDS.md`.
 
 ### Task 0.3 - Define Native Types Before Mechanisms
 
 ADRs: `ADR-0001`, `ADR-0003`, `ADR-0004`, `ADR-0006`
 
-- [ ] Step 0.3.1 - Define `RunId`, `ArtifactId`, `NodeId`, and stable hash primitives.
-- [ ] Step 0.3.2 - Define base error/result types.
-- [ ] Step 0.3.3 - Define source records for raw request, run identity, provider response identity, and artifact lineage.
-- [ ] Step 0.3.4 - Add tests for stable IDs and deterministic hashing.
+- [x] Step 0.3.1 - Define `RunId`, `ArtifactId`, `NodeId`, and stable hash primitives.
+- [x] Step 0.3.2 - Define base error/result types.
+- [x] Step 0.3.3 - Define source records for raw request, run identity, provider response identity, and artifact lineage.
+- [x] Step 0.3.4 - Add tests for stable IDs and deterministic hashing.
 
 ---
 
@@ -51,41 +51,42 @@ ADRs: `ADR-0001`, `ADR-0003`, `ADR-0004`, `ADR-0006`
 
 ADRs: `ADR-0007`, `ADR-0001`
 
-- [ ] Step 1.1.1 - Define an Axia-native `ModelProvider` port.
-- [ ] Step 1.1.2 - Define normalized request, response, metadata, and provider error records.
-- [ ] Step 1.1.3 - Ensure core reasoning code depends only on the port, not concrete provider adapters.
-- [ ] Step 1.1.4 - Add contract tests for provider success, malformed output, timeout-like failure, and metadata capture.
+- [x] Step 1.1.1 - Define an Axia-native `ModelProvider` port.
+- [x] Step 1.1.2 - Define normalized request, response, metadata, and provider error records.
+- [x] Step 1.1.3 - Ensure core reasoning code depends only on the port, not concrete provider adapters.
+- [x] Step 1.1.4 - Add contract tests for provider success, malformed output, timeout-like failure, and metadata capture.
 
 ### Task 1.2 - Implement Deterministic Fake Provider
 
 ADRs: `ADR-0007`, `ADR-0009`
 
-- [ ] Step 1.2.1 - Build a schema-aware fake provider for offline tests.
-- [ ] Step 1.2.2 - Support fixed valid JSON responses keyed by prompt markers.
-- [ ] Step 1.2.3 - Support configured malformed JSON, empty response, timeout-like failure, and schema-mismatch cases.
-- [ ] Step 1.2.4 - Emit deterministic fake provider metadata.
-- [ ] Step 1.2.5 - Prove retry, repair, scoring, and manifest capture can run without a live model.
+- [x] Step 1.2.1 - Build a schema-aware fake provider for offline tests.
+- [x] Step 1.2.2 - Support fixed valid JSON responses keyed by prompt markers.
+- [x] Step 1.2.3 - Support configured malformed JSON, empty response, timeout-like failure, and schema-mismatch cases.
+- [x] Step 1.2.4 - Emit deterministic fake provider metadata.
+- [x] Step 1.2.5 - Prove retry, repair, scoring, and manifest capture can run without a live model.
 
 ### Task 1.3 - Add Crux Provider Adapter
 
 ADRs: `ADR-0007`
 
-- [ ] Step 1.3.1 - Add a boundary adapter around `crux-providers`.
+- [ ] Step 1.3.1 - Add a boundary adapter around `crux-providers` without importing Crux from core reasoning modules.
 - [ ] Step 1.3.2 - Translate Axia-native model requests into `crux-providers` requests.
-- [ ] Step 1.3.3 - Translate provider responses and provider errors back into Axia-native records.
-- [ ] Step 1.3.4 - Add a startup/import smoke test for the expected `crux-providers` public surface.
+- [ ] Step 1.3.3 - Allow host applications to inject an already configured Crux-backed adapter or provider dependency.
+- [ ] Step 1.3.4 - Translate provider responses and provider errors back into Axia-native records.
+- [ ] Step 1.3.5 - Add a startup/import smoke test for the expected optional `crux-providers` public surface.
 
 ### Task 1.4 - Create Local CLI Skeleton
 
 ADRs: `ADR-0008`
 
-- [ ] Step 1.4.1 - Add `axia ask`.
-- [ ] Step 1.4.2 - Add `axia run`.
-- [ ] Step 1.4.3 - Add `axia trace`.
-- [ ] Step 1.4.4 - Add `axia replay`.
-- [ ] Step 1.4.5 - Add `axia profiles list`.
-- [ ] Step 1.4.6 - Add `axia benchmark run --suite baseline`.
-- [ ] Step 1.4.7 - Do not add `axia memory search`; that belongs to a memory module.
+- [x] Step 1.4.1 - Add `axia ask`.
+- [x] Step 1.4.2 - Add `axia run`.
+- [x] Step 1.4.3 - Add `axia trace`.
+- [x] Step 1.4.4 - Add `axia replay`.
+- [x] Step 1.4.5 - Add `axia profiles list`.
+- [x] Step 1.4.6 - Add `axia benchmark run --suite baseline`.
+- [x] Step 1.4.7 - Do not add `axia memory search`; that belongs to a memory module.
 
 ### Task 1.5 - Implement Local Run Store
 
@@ -350,4 +351,3 @@ ADRs: `ADR-0001`, `ADR-0006`, `ADR-0009`
 - [ ] `ADR-0007` - Provider boundary and deterministic fake provider are tested.
 - [ ] `ADR-0008` - Local-first CLI and run store prove the core path.
 - [ ] `ADR-0009` - Reasoning improvement is benchmarked against single-shot baseline.
-

@@ -1,7 +1,7 @@
 # Axia Specification
 
 **Project name:** Axia  
-**Target runtime:** Provider-agnostic, local-first model execution through `crux-providers`; default profile routes to local Ollama-compatible small models  
+**Target runtime:** Provider-agnostic, local-first model execution through an Axia-native provider port; optional `crux-providers` adapter for the standalone local profile; default profile routes to local Ollama-compatible small models  
 **Spec version:** 0.6  
 **Primary objective:** Make tiny local models produce substantially better user-facing results by surrounding them with deterministic reasoning decomposition, scoped context assembly, validation, retry, critique, scoring, and synthesis loops.  
 **Architecture pattern:** Tiny recursive orchestration. Use **Axia** as the product name, package name, and CLI name.
@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-Axia is a local-first application that turns a tiny provider-backed model into a structured worker inside a deterministic orchestration system. The default runtime profile is local Ollama through `crux-providers`, but the controller is provider-agnostic from the first build.
+Axia is a local-first application that turns a tiny provider-backed model into a structured worker inside a deterministic orchestration system. The default standalone runtime profile may use local Ollama through a `crux-providers` boundary adapter, but the controller is provider-agnostic from the first build.
 
 Axia is not machine-learning software or durable memory software. It does not train a model, update weights, perform reinforcement learning, run LoRA jobs, own long-term user memory, or claim that the underlying model has learned new capability. It is an agentic harness: a deterministic controller that surrounds a weak local model with typed reasoning steps, run-local context, validation, scoring, repair, and replay.
 
@@ -98,7 +98,7 @@ The UI may say "enhanced by orchestration" or "multi-step verified answer." It s
 
 The MVP must include:
 
-- Provider-agnostic model connection through `crux-providers`, with local Ollama as the default profile.
+- Provider-agnostic model connection through an Axia-native provider port, with local Ollama available through an optional `crux-providers` adapter in the standalone profile.
 - Model profile manager for tiny models.
 - Deterministic run controller.
 - Task constitution generator.
@@ -168,20 +168,25 @@ The MVP must not include:
 
 ## 7. Functional Requirements
 
-### FR-1: Provider-Agnostic Model Execution Through `crux-providers`
+### FR-1: Provider-Agnostic Model Execution Through an Axia Provider Port
 
-The app must not implement its own Ollama HTTP client, OpenAI client, Anthropic client, Gemini client, retry wrapper, streaming wrapper, key resolver, or model-registry fetcher.
+The core app must not implement its own Ollama HTTP client, OpenAI client, Anthropic client, Gemini client, retry wrapper, streaming wrapper, key resolver, or model-registry fetcher.
 
-`crux-providers` is the sole LLM dependency and the model-access boundary. Axia's controller receives provider and model-registry/listing dependencies through constructor injection. The standalone CLI and local web server instantiate those dependencies in the composition root. The default composition root creates a local Ollama profile, but the controller itself must not know whether the backing provider is Ollama, OpenAI, Anthropic, Gemini, OpenRouter, Deepseek, xAI, or an Axia-owned fake `LLMProvider` test double.
+Axia core has no concrete provider dependency. Its model-access contract is an Axia-native provider port. The controller receives provider and optional model-registry/listing dependencies through constructor injection.
+
+`crux-providers` is an optional boundary adapter dependency. The standalone CLI and local web server may instantiate a Crux-backed adapter in the composition root. A host application that already uses Crux should inject its existing Crux-backed adapter or provider dependency into Axia. Axia must not create a hidden second Crux stack, own Crux lifecycle globally, or allow Crux request/response objects to become core reasoning types.
+
+The default standalone composition root may create a local Ollama profile through the Crux adapter, but the controller itself must not know whether the backing provider is Ollama, OpenAI, Anthropic, Gemini, OpenRouter, Deepseek, xAI, or an Axia-owned fake provider test double.
 
 The provider boundary must support:
 
-- text generation through the normalized `crux-providers` chat contract;
+- text generation through the Axia-native provider contract;
+- adapter translation into the normalized `crux-providers` chat contract when the optional Crux adapter is installed;
 - JSON-mode where the selected provider supports it;
 - JSON-repair fallback owned by Axia when the provider cannot guarantee structured output;
 - streaming and non-streaming output where exposed by the provider;
 - deterministic request parameters where the provider supports them;
-- model discovery through `ModelRegistryRepository`, `ModelListingProvider`, or concrete provider `list_models(refresh=False)` support;
+- optional model discovery through adapter-supplied catalog/listing dependencies;
 - timeout handling, retry, cancellation, and streaming primitives through the provider layer where available;
 - raw normalized `ProviderMetadata` written into the run manifest;
 - Axia-owned fake-provider injection for deterministic offline tests.
@@ -192,15 +197,15 @@ Axia must include its own deterministic fake `LLMProvider` implementation for te
 
 The fake provider must:
 
-- accept a `ChatRequest` and return a `ChatResponse`;
+- accept an Axia-native model request and return an Axia-native model response;
 - inspect prompt content for known patterns and return fixed schema-shaped JSON, such as returning `{"status": "ok", "value": "test"}` when the prompt contains an `output_schema` marker;
 - support configured failure modes, including malformed JSON, timeout-like failures, rate-limit-like failures, empty responses, and schema-mismatched JSON;
-- include deterministic metadata, such as `ProviderMetadata(request_id="fake-123", response_id="fake-456")`, so manifests have complete traces;
+- include deterministic Axia-native metadata, such as `request_id="fake-123"` and `response_id="fake-456"`, so manifests have complete traces;
 - avoid network, Ollama, subprocesses, random sleeps, real clocks, or non-deterministic IDs unless they are explicitly supplied by the test.
 
 The purpose is to validate Axia's decision logic offline, not just to increase test coverage around a happy-path transport call.
 
-Concrete Crux imports expected by Axia:
+Optional Crux adapter imports expected by Axia's Crux boundary adapter:
 
 ```python
 from crux_providers.base import (
@@ -217,9 +222,9 @@ from crux_providers.base.dto.adapter_params import AdapterParams
 from crux_providers.base.interfaces import LLMProvider, ModelListingProvider
 ```
 
-Axia must pin and test this exact public import surface with a startup smoke test.
+Axia must pin and test this exact public import surface only in Crux adapter tests or startup checks. Core reasoning tests must run without `crux-providers` installed.
 
-Provider-specific behavior belongs either inside `crux-providers` or in the composition root. It must not enter the Axia controller.
+Provider-specific behavior belongs inside the provider library, the boundary adapter, or the composition root. It must not enter the Axia controller.
 
 ### FR-2: Model Profiles
 
@@ -559,9 +564,14 @@ Disallowed as a required product feature:
            └──► Memory Candidate Emitter
 
 ┌─────────────────────┐       ┌─────────────────────────────┐
-│ Crux Adapter Bridge │◄─────►│ crux-providers              │
-│ Axia bridge only    │       │ Ollama/OpenAI/etc. adapters │
-└─────────────────────┘       └─────────────────────────────┘
+│ ModelProvider Port  │◄─────►│ Optional Crux Adapter       │
+│ Axia-native types   │       │ crux-providers bridge only  │
+└─────────────────────┘       └──────────────┬──────────────┘
+                                             │
+                              ┌──────────────▼──────────────┐
+                              │ crux-providers              │
+                              │ Ollama/OpenAI/etc. adapters │
+                              └─────────────────────────────┘
 
 ┌─────────────────────┐       ┌─────────────────────┐
 │ SQLite Run Store    │       │ Context Provider    │
@@ -1437,18 +1447,22 @@ MVP stack:
 - Typer for CLI;
 - SQLite for run store;
 - Pydantic for schemas;
-- `crux-providers==0.1.1` as the sole LLM/provider dependency during MVP;
-- local development may use a direct dependency reference, such as `crux-providers @ git+...`, when Axia is built against an unreleased Crux commit;
+- no concrete LLM/provider dependency in Axia core;
+- optional `crux-providers==0.1.1` adapter dependency for standalone profiles that choose Crux;
+- local development may use a direct optional dependency reference, such as `crux-providers @ git+...`, when the optional Crux adapter is built against an unreleased Crux commit;
 - optional SQLite FTS5 for run-local or project-local context indexing;
 - optional local web UI with simple HTML/HTMX or React later.
 
-Reason: this keeps Axia fast, inspectable, provider-agnostic, and easy to merge into Crux Studio. A direct Ollama client would save little or nothing in meaningful runtime because tiny-model latency is dominated by generation and prompt budget, not by a thin provider abstraction. If Ollama-specific performance work is ever needed, it belongs inside `crux-providers` or behind its adapter boundary, not inside the Axia controller.
+Reason: this keeps Axia fast, inspectable, provider-agnostic, and easy to compose with Crux Studio or any app that already owns model-provider setup. A direct Ollama client would save little or nothing in meaningful runtime because tiny-model latency is dominated by generation and prompt budget, not by a thin provider abstraction. If Ollama-specific performance work is ever needed, it belongs inside the provider library or behind the adapter boundary, not inside the Axia controller.
 
 
 MVP `pyproject.toml` dependency rule:
 
 ```toml
-dependencies = [
+dependencies = []
+
+[project.optional-dependencies]
+crux = [
   "crux-providers==0.1.1",
 ]
 ```
@@ -1476,9 +1490,15 @@ axia/
       run_controller.py
       graph_executor.py
       retry_policy.py
-    llm/
-      crux_adapter.py
+    boundary/
+      ports/
+        model_provider.py
+      adapters/
+        crux_provider.py
+        fake_provider.py
+    policy/
       model_profile.py
+    operation/
       json_repair.py
     prompts/
       prompt_pack.py
@@ -1589,7 +1609,7 @@ def validate_or_repair(node, result):
 
 ## 28. Acceptance Tests
 
-### Gate A: Crux Provider Bridge Works
+### Gate A: Provider Port and Optional Crux Adapter Work
 
 Pass conditions:
 
@@ -1598,7 +1618,8 @@ Pass conditions:
 - app can receive text;
 - app can request JSON or invoke Axia-owned JSON repair fallback;
 - timeout and retry behavior is tested through the provider boundary;
-- startup smoke test verifies the expected `crux-providers` imports;
+- core tests pass without `crux-providers` installed;
+- optional Crux adapter startup smoke test verifies the expected `crux-providers` imports when the adapter is installed;
 - schema-aware fake provider exercises success and failure paths offline.
 
 ### Gate B: Schema Validation Works
@@ -1659,14 +1680,15 @@ Pass conditions:
 
 ## 29. MVP Build Roadmap
 
-### Phase 1: Skeleton and Crux Provider Bridge
+### Phase 1: Skeleton, Provider Port, and Optional Crux Adapter
 
 Deliverables:
 
 - Python package;
 - config loader;
 - model profile loader;
-- `llm/crux_adapter.py` bridge around `ProviderFactory`, `ChatRequest`, and model profile translation;
+- `boundary/ports/model_provider.py` Axia-native provider port;
+- `boundary/adapters/crux_provider.py` optional bridge around `ProviderFactory`, `ChatRequest`, and model profile translation;
 - Axia-owned deterministic schema-aware fake provider;
 - simple `axia ask` command;
 - run manifest creation.
@@ -1821,9 +1843,9 @@ Hard requirements:
 - Do not train, fine-tune, update weights, run LoRA, run reinforcement learning, or silently export training data.
 - Python 3.12.
 - Local-only by default.
-- Use `crux-providers==0.1.1` as the sole LLM/provider dependency. Do not implement an Ollama client, OpenAI client, Anthropic client, Gemini client, retry wrapper, streaming wrapper, key resolver, or provider registry inside Axia.
-- Implement `llm/crux_adapter.py` as a thin bridge around `ProviderFactory`, `ChatRequest`, and model profile translation.
-- The Axia controller must receive provider/catalog dependencies through constructor injection. The CLI/server composition root may instantiate `crux-providers` with a local Ollama profile, but the core controller must remain provider-agnostic.
+- Keep Axia core free of concrete LLM/provider dependencies. Do not implement an Ollama client, OpenAI client, Anthropic client, Gemini client, retry wrapper, streaming wrapper, key resolver, or provider registry inside Axia core.
+- Implement `boundary/adapters/crux_provider.py` as an optional thin bridge around `ProviderFactory`, `ChatRequest`, and model profile translation.
+- The Axia controller must receive provider/catalog dependencies through constructor injection. The CLI/server composition root may instantiate `crux-providers` with a local Ollama profile, but a host application that already uses Crux may inject its existing Crux-backed adapter. The core controller must remain provider-agnostic.
 - The fake provider must be deterministic and schema-aware, not a simple mock. It must support both success and failure paths, including malformed JSON and timeout-like failures, so retry, repair, scoring, and manifest logic can be tested offline.
 - Deterministic run controller with replayable manifest.
 - Pydantic schemas for canonical request, constitution, work graph, node result, scorecard, and memory candidate.

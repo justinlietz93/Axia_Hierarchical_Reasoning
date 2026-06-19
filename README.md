@@ -31,6 +31,12 @@ request
 
 Axia owns the reasoning process. It may assemble, cache, summarize, and pass context during a run because reasoning needs working state. Durable AI memory is a separate module responsibility. Axia can consume scoped context from that module and emit trace-derived memory candidates back to it, but it does not own memory search, promotion, forgetting, or long-term user profiles.
 
+## Provider boundary
+
+Axia core does not own Crux, Ollama, OpenAI, Anthropic, Gemini, or any other concrete provider.
+
+The core model contract is an Axia-native `ModelProvider` port. `crux-providers` is an optional boundary adapter for applications that want to use the Crux provider stack, especially the standalone local CLI profile. If a host application already uses Crux, it should pass an already configured Crux-backed adapter into Axia. Axia must not create a hidden second Crux stack or let Crux request/response objects become core reasoning types.
+
 ## Reasoning improvement priorities
 
 Axia should prioritize systems that measurably improve reasoning quality:
@@ -49,7 +55,8 @@ Axia should prioritize systems that measurably improve reasoning quality:
 ## Intended properties
 
 - Local-first by default
-- Provider-agnostic model access through `crux-providers`
+- Provider-agnostic model access through an Axia-native `ModelProvider` port
+- Optional `crux-providers` adapter at the boundary
 - Ollama-compatible local models as the default profile
 - Deterministic controller around non-deterministic model output
 - Schema-validated intermediate artifacts

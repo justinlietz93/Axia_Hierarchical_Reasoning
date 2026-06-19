@@ -148,6 +148,8 @@ Axia must not let provider-specific behavior enter core reasoning structures.
 
 Provider details belong behind the model-provider boundary. The core reasoning path receives normalized model responses, provider metadata, and errors translated into Axia-native error records.
 
+Axia core owns the `ModelProvider` port, not any concrete provider stack. `crux-providers` may be used by an optional boundary adapter and by standalone composition roots, but Crux request objects, response objects, registries, lifecycle, and failures must be translated before entering core reasoning. A host application that already owns Crux must be able to inject a Crux-backed adapter rather than letting Axia create hidden duplicate provider ownership.
+
 ### Traceability
 
 ```text
@@ -457,7 +459,8 @@ Axia boundaries include:
 
 - CLI;
 - local API or local web UI;
-- model providers through `crux-providers`;
+- model providers through the Axia-native `ModelProvider` port;
+- optional `crux-providers` adapter;
 - run store;
 - artifact store;
 - optional context provider;
@@ -586,11 +589,12 @@ Axia must remain valid when no memory module is installed.
 
 ## Model Provider Boundary
 
-Axia should use `crux-providers` as the model-access boundary unless a later decision record supersedes that choice.
+Axia should use an Axia-native `ModelProvider` port as the model-access boundary. `crux-providers` is the expected optional adapter for the standalone local profile unless a later decision record supersedes that choice.
 
 Rules:
 
 - Axia must not implement provider-specific clients in the core.
+- Axia core must not import `crux-providers`.
 - Axia must not let provider model names define internal behavior.
 - Provider request parameters belong in model profiles or adapter configuration.
 - Provider metadata may be stored in run manifests.

@@ -1,0 +1,2 @@
+"""Concrete boundary adapters."""
+
