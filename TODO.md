@@ -70,11 +70,11 @@ ADRs: `ADR-0007`, `ADR-0009`
 
 ADRs: `ADR-0007`
 
-- [ ] Step 1.3.1 - Add a boundary adapter around `crux-providers` without importing Crux from core reasoning modules.
-- [ ] Step 1.3.2 - Translate Axia-native model requests into `crux-providers` requests.
-- [ ] Step 1.3.3 - Allow host applications to inject an already configured Crux-backed adapter or provider dependency.
-- [ ] Step 1.3.4 - Translate provider responses and provider errors back into Axia-native records.
-- [ ] Step 1.3.5 - Add a startup/import smoke test for the expected optional `crux-providers` public surface.
+- [x] Step 1.3.1 - Add a boundary adapter around `crux-providers` without importing Crux from core reasoning modules.
+- [x] Step 1.3.2 - Translate Axia-native model requests into `crux-providers` requests.
+- [x] Step 1.3.3 - Allow host applications to inject an already configured Crux-backed adapter or provider dependency.
+- [x] Step 1.3.4 - Translate provider responses and provider errors back into Axia-native records.
+- [x] Step 1.3.5 - Add a startup/import smoke test for the expected optional `crux-providers` public surface.
 
 ### Task 1.4 - Create Local CLI Skeleton
 
