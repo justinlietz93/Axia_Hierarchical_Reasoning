@@ -92,10 +92,10 @@ ADRs: `ADR-0008`
 
 ADRs: `ADR-0008`, `ADR-0006`
 
-- [ ] Step 1.5.1 - Define a `RunStore` port.
-- [ ] Step 1.5.2 - Add a SQLite run-store adapter.
-- [ ] Step 1.5.3 - Store run manifests, nodes, artifacts, scorecards, errors, context logs, and memory candidates.
-- [ ] Step 1.5.4 - Add contract tests proving the run store is trace/replay storage, not durable memory.
+- [x] Step 1.5.1 - Define a `RunStore` port.
+- [x] Step 1.5.2 - Add a SQLite run-store adapter.
+- [x] Step 1.5.3 - Store run manifests, nodes, artifacts, scorecards, errors, context logs, and memory candidates.
+- [x] Step 1.5.4 - Add contract tests proving the run store is trace/replay storage, not durable memory.
 
 ---
 

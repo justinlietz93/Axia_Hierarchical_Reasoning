@@ -7,6 +7,15 @@ from axia.boundary.ports.model_provider import (
     ModelResponse,
     ProviderFailure,
 )
+from axia.boundary.ports.run_store import (
+    RUN_TRACE_KINDS,
+    RunManifestRecord,
+    RunStore,
+    RunStoreFailure,
+    RunTraceRecord,
+    StoredRun,
+    StoredRunTraceRecord,
+)
 
 __all__ = [
     "ModelMessage",
@@ -14,5 +23,11 @@ __all__ = [
     "ModelRequest",
     "ModelResponse",
     "ProviderFailure",
+    "RUN_TRACE_KINDS",
+    "RunManifestRecord",
+    "RunStore",
+    "RunStoreFailure",
+    "RunTraceRecord",
+    "StoredRun",
+    "StoredRunTraceRecord",
 ]
-
