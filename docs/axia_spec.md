@@ -1407,17 +1407,20 @@ orchestration:
   default_accept_threshold: 0.82
   default_repair_threshold: 0.65
 
-memory:
-  read_policy: on
-  write_policy: ask
+context:
   top_k: 5
-  backend: sqlite_fts
+  run_local_index: sqlite_fts
+
+candidate_emission:
+  enabled: false
 
 ui:
   enable_web: true
   host: 127.0.0.1
   port: 7817
 ```
+
+The `context` section controls Axia's run-local evidence assembly only. An external memory module may supply scoped context through `ContextProvider`, and an optional memory-candidate sink may receive projections when explicitly configured at the composition root. Axia does not configure durable-memory read, write, promotion, or forgetting policy.
 
 ### 24.2 `profiles/tiny-default.yaml`
 

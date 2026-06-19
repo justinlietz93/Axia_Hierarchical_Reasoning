@@ -22,7 +22,7 @@ ADRs: `ADR-0001`, `ADR-0002`, `ADR-0009`
 - [x] Step 0.1.2 - Keep durable memory, memory search, promotion, forgetting, and profile learning outside Axia.
 - [x] Step 0.1.3 - Keep model training, fine-tuning, LoRA, RLHF, and weight updates outside Axia.
 - [x] Step 0.1.4 - Define all external capabilities as boundary ports before admitting adapters.
-- [ ] Step 0.1.5 - Add an architecture check or review checklist item for memory-boundary leaks.
+- [x] Step 0.1.5 - Add an architecture check or review checklist item for memory-boundary leaks.
 
 ### Task 0.2 - Establish Project Skeleton
 
