@@ -32,7 +32,7 @@ ADRs: `ADR-0001`, `ADR-0008`
 - [x] Step 0.2.2 - Add `pyproject.toml` with Python version, package metadata, and initial test dependencies.
 - [ ] Step 0.2.3 - Add top-level packages for source, observation, invariant, formation, operation, projection, boundary, policy, and shared only as they become necessary.
 - [x] Step 0.2.4 - Add a minimal test runner command.
-- [ ] Step 0.2.5 - Add import-boundary notes or a future import-linter task matching `ARCHITECTURE_STANDARDS.md`.
+- [x] Step 0.2.5 - Add import-boundary notes or a future import-linter task matching `ARCHITECTURE_STANDARDS.md`.
 
 ### Task 0.3 - Define Native Types Before Mechanisms
 

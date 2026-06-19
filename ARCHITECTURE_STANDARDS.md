@@ -510,6 +510,16 @@ Concrete boundary adapters must not be imported inward.
 
 Boundary ports are protocol definitions. Operations may depend on them when an external capability is required. Adapters implement those ports at the edge.
 
+### Current Enforced Import Checks
+
+`make check-import-boundaries` protects the layers that exist today:
+
+- `source` and `shared` must not import boundary mechanisms;
+- `boundary.ports` must not import adapters or presentation;
+- `boundary.adapters` must not import presentation.
+
+This check is intentionally limited to admitted modules. It must be extended when `observation`, `invariant`, `formation`, `operation`, `projection`, or `policy` becomes necessary; Axia must not create empty layers merely to satisfy a generic architecture matrix.
+
 Examples:
 
 - `operation.node_execution` may depend on `boundary.ports.model_provider`.
