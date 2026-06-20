@@ -1,5 +1,12 @@
 """Boundary port definitions."""
 
+from axia.boundary.ports.context_provider import (
+    ContextProvider,
+    ContextProviderFailure,
+    ContextQuery,
+    ContextRecord,
+    ContextResponse,
+)
 from axia.boundary.ports.model_provider import (
     ModelMessage,
     ModelProvider,
@@ -18,6 +25,11 @@ from axia.boundary.ports.run_store import (
 )
 
 __all__ = [
+    "ContextProvider",
+    "ContextProviderFailure",
+    "ContextQuery",
+    "ContextRecord",
+    "ContextResponse",
     "ModelMessage",
     "ModelProvider",
     "ModelRequest",

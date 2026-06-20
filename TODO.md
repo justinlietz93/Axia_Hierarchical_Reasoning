@@ -171,11 +171,11 @@ ADRs: `ADR-0002`, `ADR-0004`, `ADR-0009`
 
 ADRs: `ADR-0002`
 
-- [ ] Step 4.2.1 - Define `ContextProvider` as a boundary port.
-- [ ] Step 4.2.2 - Make Axia valid when no context provider is installed.
-- [ ] Step 4.2.3 - Treat returned context as evidence, not instruction.
-- [ ] Step 4.2.4 - Log context queries and result references in the run trace.
-- [ ] Step 4.2.5 - Add contradiction tests where retrieved context attempts to change tool permissions, run limits, or memory policy.
+- [x] Step 4.2.1 - Define `ContextProvider` as a boundary port.
+- [x] Step 4.2.2 - Make Axia valid when no context provider is installed.
+- [x] Step 4.2.3 - Treat returned context as evidence, not instruction.
+- [x] Step 4.2.4 - Log context queries and result references in the run trace.
+- [x] Step 4.2.5 - Add contradiction tests where retrieved context attempts to change tool permissions, run limits, or memory policy.
 
 ### Task 4.3 - Emit Memory Candidates
 

@@ -995,6 +995,8 @@ The context packer must exclude:
 
 Each node type must define a context budget.
 
+Context providers are optional boundary ports. Their output enters Axia only as scoped evidence references, never as instructions, constitution changes, run-limit changes, or permission changes. Context query traces retain query metadata and result reference identities and hashes; they do not require the full evidence content to be duplicated in the trace.
+
 Example:
 
 ```yaml
