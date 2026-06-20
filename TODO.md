@@ -105,11 +105,11 @@ ADRs: `ADR-0008`, `ADR-0006`
 
 ADRs: `ADR-0003`, `ADR-0009`
 
-- [ ] Step 2.1.1 - Define the canonical request schema.
-- [ ] Step 2.1.2 - Capture user intent, deliverable type, constraints, unknowns, risk flags, output format, expected depth, and context needs.
-- [ ] Step 2.1.3 - Generate canonical requests through a schema-constrained micro-agent or fake-provider equivalent.
-- [ ] Step 2.1.4 - Add deterministic validation for required fields and invalid combinations.
-- [ ] Step 2.1.5 - Add contradiction tests for ambiguous or underspecified requests.
+- [x] Step 2.1.1 - Define the canonical request schema.
+- [x] Step 2.1.2 - Capture user intent, deliverable type, constraints, unknowns, risk flags, output format, expected depth, and context needs.
+- [x] Step 2.1.3 - Generate canonical requests through a schema-constrained micro-agent or fake-provider equivalent.
+- [x] Step 2.1.4 - Add deterministic validation for required fields and invalid combinations.
+- [x] Step 2.1.5 - Add contradiction tests for ambiguous or underspecified requests.
 
 ### Task 2.2 - Implement Task Constitution Formation
 

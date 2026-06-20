@@ -25,12 +25,22 @@ class ImportBoundaryTests(unittest.TestCase):
     def test_source_and_shared_do_not_import_boundary_mechanisms(self) -> None:
         violations = [
             f"{source_path}: {module}"
-            for directory_name in ("source", "shared")
+            for directory_name in ("source", "shared", "formation")
             for source_path, module in _imports_from(SOURCE_ROOT / directory_name)
             if module == "axia.boundary" or module.startswith("axia.boundary.")
         ]
 
-        self.assertEqual(violations, [], "Source and shared layers must not depend on boundary mechanisms.")
+        self.assertEqual(violations, [], "Source, shared, and formation layers must not depend on boundary mechanisms.")
+
+    def test_operations_depend_on_ports_not_adapters_or_presentation(self) -> None:
+        violations = [
+            f"{source_path}: {module}"
+            for source_path, module in _imports_from(SOURCE_ROOT / "operation")
+            if module.startswith("axia.boundary.adapters")
+            or module.startswith("axia.boundary.presentation")
+        ]
+
+        self.assertEqual(violations, [], "Operations may depend on ports but not concrete adapters or presentation.")
 
     def test_ports_do_not_import_adapters_or_presentation(self) -> None:
         violations = [

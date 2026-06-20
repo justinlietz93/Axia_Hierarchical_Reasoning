@@ -515,10 +515,12 @@ Boundary ports are protocol definitions. Operations may depend on them when an e
 `make check-import-boundaries` protects the layers that exist today:
 
 - `source` and `shared` must not import boundary mechanisms;
+- `formation` must not import boundary mechanisms;
+- `operation` may depend on ports but not adapters or presentation;
 - `boundary.ports` must not import adapters or presentation;
 - `boundary.adapters` must not import presentation.
 
-This check is intentionally limited to admitted modules. It must be extended when `observation`, `invariant`, `formation`, `operation`, `projection`, or `policy` becomes necessary; Axia must not create empty layers merely to satisfy a generic architecture matrix.
+This check is intentionally limited to admitted modules. It must be extended when `observation`, `invariant`, `projection`, or `policy` becomes necessary; Axia must not create empty layers merely to satisfy a generic architecture matrix.
 
 Examples:
 
