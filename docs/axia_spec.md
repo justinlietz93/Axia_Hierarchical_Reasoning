@@ -884,6 +884,8 @@ The core budget is a deterministic serialized-character ceiling. A future model 
 }
 ```
 
+`validation_errors` must retain typed parse and schema issues for rejected node outputs so retry and repair policy can inspect the actual failure.
+
 ### 14.6 Scorecard
 
 ```json

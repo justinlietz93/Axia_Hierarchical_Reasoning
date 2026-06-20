@@ -16,6 +16,7 @@ from axia.formation import (
     WorkNode,
     build_context_pack,
     build_task_constitution,
+    validate_micro_agent_response,
 )
 from axia.formation.canonical_request import CanonicalRequest
 from axia.operation import compile_micro_agent_request, execute_micro_agent
@@ -163,6 +164,16 @@ class MicroAgentTests(unittest.TestCase):
                 self.assertEqual(failure.exception.kind, expected_kind)
                 self.assertEqual(evaluator.artifacts, [])
                 self.assertEqual(len(provider.requests), 1)
+
+    def test_node_validation_result_preserves_schema_errors_before_controller_use(self) -> None:
+        contract = _contract()
+        node_result = validate_micro_agent_response(contract, '{"status":"ok"}')
+
+        self.assertFalse(node_result.accepted)
+        self.assertEqual(node_result.node_id, contract.node.node_id)
+        self.assertIsNone(node_result.artifact)
+        self.assertEqual(node_result.validation_errors[0].rule, "required")
+        self.assertEqual(node_result.validation_errors[0].path, "$.value")
 
 
 if __name__ == "__main__":

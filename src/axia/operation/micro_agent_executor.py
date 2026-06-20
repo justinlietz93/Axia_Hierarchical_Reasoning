@@ -11,8 +11,10 @@ from axia.formation.micro_agent import (
     MicroAgentEvaluation,
     MicroAgentFailure,
     TypedArtifact,
+    NodeValidationResult,
+    require_valid_node_output,
     validate_context_pack,
-    validate_typed_payload,
+    validate_micro_agent_response,
 )
 from axia.shared.ids import stable_json_hash
 
@@ -24,6 +26,7 @@ class MicroAgentResult:
     artifact: TypedArtifact
     evaluation: MicroAgentEvaluation
     provider_metadata: Mapping[str, str]
+    node_result: NodeValidationResult
 
 
 def compile_micro_agent_request(
@@ -68,27 +71,21 @@ def execute_micro_agent(
     """Generate, parse, and evaluate without exposing raw provider text to callers."""
 
     response = provider.generate(compile_micro_agent_request(contract, context_pack))
-    artifact = parse_micro_agent_response(contract, response.text)
+    node_result = validate_micro_agent_response(contract, response.text)
+    artifact = require_valid_node_output(node_result)
     evaluation = contract.evaluator.evaluate(artifact)
     return MicroAgentResult(
         artifact=artifact,
         evaluation=evaluation,
         provider_metadata=dict(response.metadata),
+        node_result=node_result,
     )
 
 
 def parse_micro_agent_response(contract: MicroAgentContract, response_text: str) -> TypedArtifact:
     """Parse and schema-validate provider text before it reaches evaluation or control."""
 
-    try:
-        payload = json.loads(response_text)
-    except json.JSONDecodeError as error:
-        raise MicroAgentFailure(
-            kind="micro_agent_output_json_invalid",
-            message="micro-agent output must be valid JSON",
-        ) from error
-    typed_payload = validate_typed_payload(payload, contract.output_schema)
-    return TypedArtifact.from_payload(typed_payload)
+    return require_valid_node_output(validate_micro_agent_response(contract, response_text))
 
 
 def _node_contract_payload(contract: MicroAgentContract) -> dict[str, object]:

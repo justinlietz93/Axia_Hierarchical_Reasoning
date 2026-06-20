@@ -195,11 +195,11 @@ ADRs: `ADR-0002`, `ADR-0006`
 
 ADRs: `ADR-0005`, `ADR-0007`
 
-- [ ] Step 5.1.1 - Parse every model output used by the controller.
-- [ ] Step 5.1.2 - Reject malformed JSON.
-- [ ] Step 5.1.3 - Reject schema-mismatched JSON.
-- [ ] Step 5.1.4 - Preserve validation errors in node results.
-- [ ] Step 5.1.5 - Add tests for parse failure, missing fields, wrong type, and valid output.
+- [x] Step 5.1.1 - Parse every model output used by the controller.
+- [x] Step 5.1.2 - Reject malformed JSON.
+- [x] Step 5.1.3 - Reject schema-mismatched JSON.
+- [x] Step 5.1.4 - Preserve validation errors in node results.
+- [x] Step 5.1.5 - Add tests for parse failure, missing fields, wrong type, and valid output.
 
 ### Task 5.2 - Implement Scorecards
 

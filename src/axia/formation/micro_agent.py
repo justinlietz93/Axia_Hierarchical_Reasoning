@@ -4,9 +4,15 @@ from dataclasses import dataclass
 from typing import Mapping, Protocol
 
 from axia.formation.context_pack import ContextPack
+from axia.formation.structured_output import (
+    StructuredOutputResult,
+    ValidationIssue,
+    parse_and_validate_json_object,
+    validate_json_schema,
+)
 from axia.formation.work_graph import WorkNode
 from axia.shared.errors import AxiaError
-from axia.shared.ids import stable_json_hash
+from axia.shared.ids import NodeId, stable_json_hash
 
 
 @dataclass(frozen=True)
@@ -61,6 +67,21 @@ class MicroAgentContract:
 class MicroAgentFailure(AxiaError):
     """A deterministic failure while compiling or parsing one micro-agent exchange."""
 
+    validation_errors: tuple[ValidationIssue, ...] = ()
+
+
+@dataclass(frozen=True)
+class NodeValidationResult:
+    """The parse and schema evidence retained for one node output attempt."""
+
+    node_id: NodeId
+    artifact: TypedArtifact | None
+    validation_errors: tuple[ValidationIssue, ...]
+
+    @property
+    def accepted(self) -> bool:
+        return self.artifact is not None and not self.validation_errors
+
 
 def validate_context_pack(contract: MicroAgentContract, context_pack: ContextPack) -> dict[str, object]:
     """Admit only the context pack formed for the contract's exact work node."""
@@ -102,7 +123,14 @@ def validate_context_pack(contract: MicroAgentContract, context_pack: ContextPac
 def validate_typed_payload(payload: object, schema: Mapping[str, object]) -> Mapping[str, object]:
     """Validate the JSON object shape needed before evaluator or controller use."""
 
-    _validate_schema_value(payload, schema, "$", MicroAgentFailure)
+    validation_errors = validate_json_schema(payload, schema)
+    if validation_errors:
+        issue = validation_errors[0]
+        raise MicroAgentFailure(
+            kind="micro_agent_output_schema_invalid",
+            message=f"{issue.path} {issue.message}",
+            validation_errors=validation_errors,
+        )
     if not isinstance(payload, Mapping):
         raise MicroAgentFailure(
             kind="micro_agent_output_schema_invalid",
@@ -111,69 +139,39 @@ def validate_typed_payload(payload: object, schema: Mapping[str, object]) -> Map
     return payload
 
 
-def _validate_schema_value(
-    value: object,
-    schema: Mapping[str, object],
-    path: str,
-    failure_type: type[MicroAgentFailure],
-) -> None:
-    expected_type = schema.get("type")
-    if expected_type is not None and not _matches_json_type(value, expected_type):
-        raise failure_type(
-            kind="micro_agent_output_schema_invalid",
-            message=f"{path} must have JSON type {expected_type!r}",
-        )
-    if "enum" in schema and value not in schema["enum"]:
-        raise failure_type(
-            kind="micro_agent_output_schema_invalid",
-            message=f"{path} must match one of the declared enum values",
-        )
-    if not isinstance(value, Mapping):
-        return
+def validate_micro_agent_response(contract: MicroAgentContract, response_text: str) -> NodeValidationResult:
+    """Retain parse and schema errors in a node result before controller policy acts."""
 
-    required_fields = schema.get("required", ())
-    if not isinstance(required_fields, list):
-        raise failure_type(
-            kind="micro_agent_schema_invalid",
-            message="schema required must be a list",
+    parsed_output: StructuredOutputResult = parse_and_validate_json_object(response_text, contract.output_schema)
+    if not parsed_output.accepted:
+        return NodeValidationResult(
+            node_id=contract.node.node_id,
+            artifact=None,
+            validation_errors=parsed_output.validation_errors,
         )
-    missing_fields = [field for field in required_fields if not isinstance(field, str) or field not in value]
-    if missing_fields:
-        raise failure_type(
-            kind="micro_agent_output_schema_invalid",
-            message=f"{path} is missing fields: {', '.join(str(field) for field in missing_fields)}",
-        )
-
-    properties = schema.get("properties", {})
-    if not isinstance(properties, Mapping):
-        raise failure_type(
-            kind="micro_agent_schema_invalid",
-            message="schema properties must be an object",
-        )
-    unexpected_fields = set(value) - set(properties)
-    if schema.get("additionalProperties") is False and unexpected_fields:
-        raise failure_type(
-            kind="micro_agent_output_schema_invalid",
-            message=f"{path} has unsupported fields: {', '.join(sorted(str(field) for field in unexpected_fields))}",
-        )
-    for field, field_schema in properties.items():
-        if field in value:
-            if not isinstance(field_schema, Mapping):
-                raise failure_type(
-                    kind="micro_agent_schema_invalid",
-                    message=f"schema for {field!r} must be an object",
-                )
-            _validate_schema_value(value[field], field_schema, f"{path}.{field}", failure_type)
+    assert parsed_output.payload is not None
+    return NodeValidationResult(
+        node_id=contract.node.node_id,
+        artifact=TypedArtifact.from_payload(parsed_output.payload),
+        validation_errors=(),
+    )
 
 
-def _matches_json_type(value: object, expected_type: object) -> bool:
-    matches = {
-        "object": isinstance(value, Mapping),
-        "array": isinstance(value, list),
-        "string": isinstance(value, str),
-        "number": isinstance(value, (int, float)) and not isinstance(value, bool),
-        "integer": isinstance(value, int) and not isinstance(value, bool),
-        "boolean": isinstance(value, bool),
-        "null": value is None,
-    }
-    return isinstance(expected_type, str) and matches.get(expected_type, False)
+def require_valid_node_output(node_result: NodeValidationResult) -> TypedArtifact:
+    """Prevent evaluator or controller use of a node output with parse or schema errors."""
+
+    if node_result.accepted:
+        assert node_result.artifact is not None
+        return node_result.artifact
+    issue = node_result.validation_errors[0]
+    if issue.rule == "json_parse":
+        kind = "micro_agent_output_json_invalid"
+    elif issue.rule == "schema":
+        kind = "micro_agent_schema_invalid"
+    else:
+        kind = "micro_agent_output_schema_invalid"
+    raise MicroAgentFailure(
+        kind=kind,
+        message=f"{issue.path} {issue.message}",
+        validation_errors=node_result.validation_errors,
+    )
