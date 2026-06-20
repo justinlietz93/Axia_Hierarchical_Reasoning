@@ -13,6 +13,7 @@ WORK_NODE_KINDS = frozenset(
         "canonicalize",
         "constitute",
         "retrieve",
+        "plan",
         "decompose",
         "assemble_context",
         "analyze",
@@ -22,6 +23,7 @@ WORK_NODE_KINDS = frozenset(
         "merge",
         "verify",
         "finalize",
+        "final",
         "synthesize",
         "emit_memory_candidate",
     }
@@ -229,4 +231,61 @@ def form_work_graph(
         constitution_revision_hash=admitted_constitution.revision_hash(),
         nodes=nodes,
         refinement_cycles=refinement_cycles,
+    )
+
+
+def build_standard_work_graph(constitution: TaskConstitution | None) -> WorkGraph:
+    """Build the fixed, narrow standard reasoning graph from one constitution."""
+
+    admitted_constitution = require_task_constitution(constitution)
+    nodes = (
+        _standard_node("canonicalize", "canonicalize", (), ("source_request",), 0, "fail_run"),
+        _standard_node("constitute", "constitute", ("canonicalize",), ("canonical_request",), 0, "fail_run"),
+        _standard_node("retrieve", "retrieve", ("constitute",), ("constitution",), 0, "continue_with_caveat"),
+        _standard_node("plan", "plan", ("constitute", "retrieve"), ("constitution", "retrieved_evidence"), 0, "fail_run"),
+        _standard_node("draft", "draft", ("plan",), ("plan",), 0, "fail_run"),
+        _standard_node("critique", "critique", ("draft", "constitute"), ("draft", "constitution"), 0, "fail_run"),
+        _standard_node(
+            "repair",
+            "repair",
+            ("draft", "critique"),
+            ("draft", "critique"),
+            admitted_constitution.limits.max_retries_per_node,
+            "retry",
+        ),
+        _standard_node("verify", "verify", ("repair", "constitute", "retrieve"), ("repaired_draft", "constitution", "retrieved_evidence"), 0, "fail_run"),
+        _standard_node("final", "final", ("repair", "verify"), ("repaired_draft", "verification"), 0, "fail_run"),
+        _standard_node("memory_candidates", "emit_memory_candidate", ("final",), ("final_answer",), 0, "continue_with_caveat"),
+    )
+    return form_work_graph(
+        admitted_constitution,
+        nodes,
+        refinement_cycles=(
+            RefinementCycle(
+                from_node_id=NodeId.from_value("node_repair"),
+                to_node_id=NodeId.from_value("node_critique"),
+                max_iterations=admitted_constitution.limits.max_retries_per_node,
+            ),
+        ),
+    )
+
+
+def _standard_node(
+    name: str,
+    kind: str,
+    dependencies: tuple[str, ...],
+    context_scope: tuple[str, ...],
+    retry_limit: int,
+    failure_behavior: str,
+) -> WorkNode:
+    return WorkNode(
+        node_id=NodeId.from_value(f"node_{name}"),
+        kind=kind,
+        depends_on=tuple(NodeId.from_value(f"node_{dependency}") for dependency in dependencies),
+        input_schema={"type": "object", "required": list(context_scope)},
+        output_schema={"type": "object"},
+        context_scope=context_scope,
+        retry_limit=retry_limit,
+        score_policy=ScorePolicy(accept_threshold=0.82, repair_threshold=0.65),
+        failure_behavior=failure_behavior,
     )

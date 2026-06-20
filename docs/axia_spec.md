@@ -624,12 +624,12 @@ A minimal standard-mode graph:
 N1 canonicalize_request
 N2 build_constitution depends_on N1
 N3 retrieve_context depends_on N2
-N4 decompose_problem depends_on N2,N3
+N4 plan_reasoning depends_on N2,N3
 N5 draft_answer depends_on N4
 N6 critique_answer depends_on N5,N2
 N7 repair_answer depends_on N5,N6
 N8 verify_answer depends_on N7,N2,N3
-N9 final_synthesis depends_on N7,N8
+N9 final_answer depends_on N7,N8
 N10 emit_memory_candidates depends_on N9
 ```
 
@@ -823,7 +823,7 @@ Every prompt must be built from canonical JSON serialization:
   "nodes": [
     {
       "node_id": "node_string",
-      "kind": "canonicalize|constitute|retrieve|decompose|assemble_context|analyze|draft|critique|repair|merge|verify|finalize|synthesize|emit_memory_candidate",
+      "kind": "canonicalize|constitute|retrieve|plan|decompose|assemble_context|analyze|draft|critique|repair|merge|verify|finalize|final|synthesize|emit_memory_candidate",
       "depends_on": [],
       "input_schema": {},
       "output_schema": {},

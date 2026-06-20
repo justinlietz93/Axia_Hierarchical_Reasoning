@@ -139,10 +139,10 @@ ADRs: `ADR-0004`, `ADR-0003`
 
 ADRs: `ADR-0004`, `ADR-0009`
 
-- [ ] Step 3.2.1 - Build standard graph: canonicalize -> constitution -> retrieve -> plan -> draft -> critique -> repair -> verify -> final -> memory_candidates.
-- [ ] Step 3.2.2 - Keep each node narrow enough for a small local model.
-- [ ] Step 3.2.3 - Make graph construction deterministic from the constitution.
-- [ ] Step 3.2.4 - Add a fixture proving the same constitution produces the same graph.
+- [x] Step 3.2.1 - Build standard graph: canonicalize -> constitution -> retrieve -> plan -> draft -> critique -> repair -> verify -> final -> memory_candidates.
+- [x] Step 3.2.2 - Keep each node narrow enough for a small local model.
+- [x] Step 3.2.3 - Make graph construction deterministic from the constitution.
+- [x] Step 3.2.4 - Add a fixture proving the same constitution produces the same graph.
 
 ### Task 3.3 - Implement Micro-Agent Contracts
 

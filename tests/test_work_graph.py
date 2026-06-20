@@ -8,6 +8,7 @@ from axia.formation import (
     TaskConstitutionFailure,
     WorkGraphFailure,
     WorkNode,
+    build_standard_work_graph,
     build_task_constitution,
     form_work_graph,
 )
@@ -126,6 +127,30 @@ class WorkGraphTests(unittest.TestCase):
             form_work_graph(None, (_node("draft", "draft"),))
 
         self.assertEqual(failure.exception.kind, "task_constitution_required")
+
+    def test_standard_graph_is_deterministic_and_has_narrow_ordered_nodes(self) -> None:
+        constitution = _constitution()
+        first = build_standard_work_graph(constitution)
+        second = build_standard_work_graph(constitution)
+
+        self.assertEqual(first, second)
+        self.assertEqual(
+            [(node.node_id.value, node.kind) for node in first.topological_order()],
+            [
+                ("node_canonicalize", "canonicalize"),
+                ("node_constitute", "constitute"),
+                ("node_retrieve", "retrieve"),
+                ("node_plan", "plan"),
+                ("node_draft", "draft"),
+                ("node_critique", "critique"),
+                ("node_repair", "repair"),
+                ("node_verify", "verify"),
+                ("node_final", "final"),
+                ("node_memory_candidates", "emit_memory_candidate"),
+            ],
+        )
+        self.assertTrue(all(node.context_scope for node in first.nodes))
+        self.assertEqual(first.refinement_cycles[0].max_iterations, constitution.limits.max_retries_per_node)
 
 
 if __name__ == "__main__":

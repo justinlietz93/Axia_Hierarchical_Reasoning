@@ -26,6 +26,7 @@ from axia.formation.work_graph import (
     WorkGraph,
     WorkGraphFailure,
     WorkNode,
+    build_standard_work_graph,
     form_work_graph,
 )
 
@@ -51,5 +52,6 @@ __all__ = [
     "WorkGraph",
     "WorkGraphFailure",
     "WorkNode",
+    "build_standard_work_graph",
     "form_work_graph",
 ]
