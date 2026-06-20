@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Mapping
 
 from axia.boundary.ports.model_provider import ModelMessage, ModelProvider, ModelRequest
+from axia.formation.context_pack import ContextPack
 from axia.formation.micro_agent import (
     MicroAgentContract,
     MicroAgentEvaluation,
@@ -27,7 +28,7 @@ class MicroAgentResult:
 
 def compile_micro_agent_request(
     contract: MicroAgentContract,
-    context_pack: Mapping[str, object],
+    context_pack: ContextPack,
 ) -> ModelRequest:
     """Compile a deterministic, scope-bounded request for one model call."""
 
@@ -60,7 +61,7 @@ def compile_micro_agent_request(
 
 def execute_micro_agent(
     contract: MicroAgentContract,
-    context_pack: Mapping[str, object],
+    context_pack: ContextPack,
     provider: ModelProvider,
 ) -> MicroAgentResult:
     """Generate, parse, and evaluate without exposing raw provider text to callers."""

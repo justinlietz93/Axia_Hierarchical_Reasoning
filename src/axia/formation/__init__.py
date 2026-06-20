@@ -7,6 +7,14 @@ from axia.formation.canonical_request import (
     canonical_request_from_json,
     canonical_request_from_payload,
 )
+from axia.formation.context_pack import (
+    CONTEXT_BUDGETS_BY_NODE_KIND,
+    CONTEXT_REFERENCE_TYPES,
+    ContextPack,
+    ContextPackFailure,
+    ContextReference,
+    build_context_pack,
+)
 from axia.formation.micro_agent import (
     ArtifactEvaluator,
     MicroAgentContract,
@@ -45,6 +53,12 @@ __all__ = [
     "CanonicalRequestFailure",
     "canonical_request_from_json",
     "canonical_request_from_payload",
+    "CONTEXT_BUDGETS_BY_NODE_KIND",
+    "CONTEXT_REFERENCE_TYPES",
+    "ContextPack",
+    "ContextPackFailure",
+    "ContextReference",
+    "build_context_pack",
     "ArtifactEvaluator",
     "MicroAgentContract",
     "MicroAgentEvaluation",

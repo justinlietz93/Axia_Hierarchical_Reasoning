@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping, Protocol
 
+from axia.formation.context_pack import ContextPack
 from axia.formation.work_graph import WorkNode
 from axia.shared.errors import AxiaError
 from axia.shared.ids import stable_json_hash
@@ -61,11 +62,28 @@ class MicroAgentFailure(AxiaError):
     """A deterministic failure while compiling or parsing one micro-agent exchange."""
 
 
-def validate_context_pack(contract: MicroAgentContract, context_pack: Mapping[str, object]) -> dict[str, object]:
-    """Admit only the context fields declared by the node contract."""
+def validate_context_pack(contract: MicroAgentContract, context_pack: ContextPack) -> dict[str, object]:
+    """Admit only the context pack formed for the contract's exact work node."""
+
+    if context_pack.node_id != contract.node.node_id:
+        raise MicroAgentFailure(
+            kind="micro_agent_context_node_mismatch",
+            message="a micro-agent may use only a context pack for its own node",
+        )
+    if context_pack.node_instruction != contract.role_prompt.strip():
+        raise MicroAgentFailure(
+            kind="micro_agent_context_instruction_mismatch",
+            message="the context pack instruction must match the micro-agent role prompt",
+        )
+    if dict(context_pack.output_schema) != dict(contract.output_schema):
+        raise MicroAgentFailure(
+            kind="micro_agent_context_schema_mismatch",
+            message="the context pack output schema must match the micro-agent contract",
+        )
 
     expected_fields = set(contract.node.context_scope)
-    supplied_fields = set(context_pack)
+    prompt_inputs = context_pack.prompt_inputs()
+    supplied_fields = set(prompt_inputs)
     missing_fields = expected_fields - supplied_fields
     if missing_fields:
         raise MicroAgentFailure(
@@ -78,7 +96,7 @@ def validate_context_pack(contract: MicroAgentContract, context_pack: Mapping[st
             kind="micro_agent_context_scope_violation",
             message=f"context pack includes undeclared fields: {', '.join(sorted(unexpected_fields))}",
         )
-    return {field: context_pack[field] for field in contract.node.context_scope}
+    return {field: prompt_inputs[field] for field in contract.node.context_scope}
 
 
 def validate_typed_payload(payload: object, schema: Mapping[str, object]) -> Mapping[str, object]:

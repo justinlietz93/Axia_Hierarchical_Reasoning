@@ -161,11 +161,11 @@ ADRs: `ADR-0004`, `ADR-0007`
 
 ADRs: `ADR-0002`, `ADR-0004`, `ADR-0009`
 
-- [ ] Step 4.1.1 - Define `ContextPack` and `ContextReference` schemas.
-- [ ] Step 4.1.2 - Pack node instruction, constitution subset, required prior artifacts, scoped context records, and output schema.
-- [ ] Step 4.1.3 - Exclude unrelated nodes, full logs, redundant context, unnecessary rejected artifacts, and hidden chain-of-thought.
-- [ ] Step 4.1.4 - Enforce per-node context budgets.
-- [ ] Step 4.1.5 - Add tests for stable context ordering.
+- [x] Step 4.1.1 - Define `ContextPack` and `ContextReference` schemas.
+- [x] Step 4.1.2 - Pack node instruction, constitution subset, required prior artifacts, scoped context records, and output schema.
+- [x] Step 4.1.3 - Exclude unrelated nodes, full logs, redundant context, unnecessary rejected artifacts, and hidden chain-of-thought.
+- [x] Step 4.1.4 - Enforce per-node context budgets.
+- [x] Step 4.1.5 - Add tests for stable context ordering.
 
 ### Task 4.2 - Implement Context Provider Port
 

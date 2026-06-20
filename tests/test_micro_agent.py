@@ -5,13 +5,19 @@ import unittest
 from axia.boundary.adapters.fake_provider import FakeProvider
 from axia.boundary.ports.model_provider import ModelRequest, ModelResponse
 from axia.formation import (
+    ContextPack,
+    ContextPackFailure,
+    ContextReference,
     MicroAgentContract,
     MicroAgentEvaluation,
     MicroAgentFailure,
     ScorePolicy,
     TypedArtifact,
     WorkNode,
+    build_context_pack,
+    build_task_constitution,
 )
+from axia.formation.canonical_request import CanonicalRequest
 from axia.operation import compile_micro_agent_request, execute_micro_agent
 from axia.shared.ids import NodeId
 
@@ -66,9 +72,42 @@ def _contract(evaluator: AcceptingEvaluator | None = None) -> MicroAgentContract
     )
 
 
+def _constitution():
+    return build_task_constitution(
+        CanonicalRequest(
+            source_request_hash="request-hash",
+            intent="write a draft",
+            deliverable_type="answer",
+            constraints=(),
+            unknowns=(),
+            risk_flags=(),
+            output_format="JSON",
+            expected_depth="brief",
+            needed_context=(),
+        )
+    )
+
+
+def _context_pack(contract: MicroAgentContract, plan: str = "draft") -> ContextPack:
+    return build_context_pack(
+        contract.node,
+        node_instruction=contract.role_prompt,
+        constitution=_constitution(),
+        prior_artifacts=(
+            ContextReference.from_content(
+                scope="plan",
+                source_type="artifact",
+                reference_id="artifact_plan",
+                content=plan,
+            ),
+        ),
+    )
+
+
 class MicroAgentTests(unittest.TestCase):
     def test_compiles_a_stable_request_from_node_contract_and_explicit_context(self) -> None:
-        request = compile_micro_agent_request(_contract(), {"plan": "compare SQLite and DuckDB"})
+        contract = _contract()
+        request = compile_micro_agent_request(contract, _context_pack(contract, "compare SQLite and DuckDB"))
 
         self.assertEqual(request.output_schema, OUTPUT_SCHEMA)
         self.assertEqual(request.metadata["stage"], "micro_agent")
@@ -78,19 +117,30 @@ class MicroAgentTests(unittest.TestCase):
         self.assertIn('"plan":"compare SQLite and DuckDB"', prompt)
 
     def test_rejects_context_outside_the_node_scope(self) -> None:
-        with self.assertRaises(MicroAgentFailure) as failure:
-            compile_micro_agent_request(
-                _contract(),
-                {"plan": "draft", "prior_run": "implicit shared state"},
+        contract = _contract()
+        with self.assertRaises(ContextPackFailure) as failure:
+            build_context_pack(
+                contract.node,
+                node_instruction=contract.role_prompt,
+                constitution=_constitution(),
+                prior_artifacts=(
+                    ContextReference.from_content(
+                        scope="prior_run",
+                        source_type="artifact",
+                        reference_id="artifact_prior_run",
+                        content="implicit shared state",
+                    ),
+                ),
             )
 
-        self.assertEqual(failure.exception.kind, "micro_agent_context_scope_violation")
+        self.assertEqual(failure.exception.kind, "context_pack_scope_violation")
 
     def test_evaluator_receives_only_a_schema_validated_artifact(self) -> None:
         evaluator = AcceptingEvaluator()
+        contract = _contract(evaluator)
         result = execute_micro_agent(
-            _contract(evaluator),
-            {"plan": "draft"},
+            contract,
+            _context_pack(contract),
             FakeProvider(),
         )
 
@@ -106,8 +156,9 @@ class MicroAgentTests(unittest.TestCase):
             with self.subTest(response_text=response_text):
                 evaluator = AcceptingEvaluator()
                 provider = RecordingProvider(response_text)
+                contract = _contract(evaluator)
                 with self.assertRaises(MicroAgentFailure) as failure:
-                    execute_micro_agent(_contract(evaluator), {"plan": "draft"}, provider)
+                    execute_micro_agent(contract, _context_pack(contract), provider)
 
                 self.assertEqual(failure.exception.kind, expected_kind)
                 self.assertEqual(evaluator.artifacts, [])

@@ -843,7 +843,31 @@ Every prompt must be built from canonical JSON serialization:
 }
 ```
 
-### 14.4 Node Result
+### 14.4 Context Pack
+
+```json
+{
+  "node_id": "node_string",
+  "node_instruction": "string",
+  "constitution_subset": {},
+  "references": [
+    {
+      "scope": "string",
+      "source_type": "request|artifact|evidence",
+      "reference_id": "string",
+      "content": {},
+      "content_hash": "string",
+      "accepted": true
+    }
+  ],
+  "output_schema": {},
+  "max_serialized_characters": 6400
+}
+```
+
+The core budget is a deterministic serialized-character ceiling. A future model profile may additionally calculate provider-specific token counts, but it must not weaken this controller limit.
+
+### 14.5 Node Result
 
 ```json
 {
@@ -860,7 +884,7 @@ Every prompt must be built from canonical JSON serialization:
 }
 ```
 
-### 14.5 Scorecard
+### 14.6 Scorecard
 
 ```json
 {
@@ -877,7 +901,7 @@ Every prompt must be built from canonical JSON serialization:
 }
 ```
 
-### 14.6 Memory Candidate Projection
+### 14.7 Memory Candidate Projection
 
 ```json
 {
