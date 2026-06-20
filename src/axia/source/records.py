@@ -32,6 +32,13 @@ class ProviderResponseRecord:
         content_hash = stable_json_hash({"text": text, "metadata": metadata})
         return cls(text=text, metadata=metadata, content_hash=content_hash)
 
+    def to_payload(self) -> dict[str, object]:
+        return {
+            "text": self.text,
+            "metadata": dict(sorted(self.metadata.items())),
+            "content_hash": self.content_hash,
+        }
+
 
 @dataclass(frozen=True)
 class ArtifactLineage:
@@ -49,4 +56,3 @@ class ArtifactLineage:
         if not source_hashes:
             raise ValueError("artifact lineage requires at least one source hash")
         return cls(artifact_id=artifact_id, run_id=run_id, source_hashes=source_hashes)
-

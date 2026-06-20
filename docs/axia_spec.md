@@ -769,12 +769,17 @@ Every prompt must be built from canonical JSON serialization:
 
 ```json
 {
+  "schema_version": 1,
   "run_id": "string",
   "created_at": "iso8601",
   "app_version": "string",
   "user_request_hash": "string",
-  "model_profile_hash": "string",
-  "prompt_pack_hash": "string",
+  "model_profile": {
+    "name": "string",
+    "profile_hash": "string",
+    "provider_metadata": {}
+  },
+  "prompt_hashes": {},
   "mode": "quick|standard|deep",
   "status": "new|running|complete|failed|cancelled",
   "canonical_request": {},
@@ -878,10 +883,17 @@ The core budget is a deterministic serialized-character ceiling. A future model 
   "attempt": 1,
   "status": "accepted|repaired|rejected|failed",
   "input_hash": "string",
+  "prompt_hash": "string",
   "output_hash": "string",
+  "artifact_id": "string or null",
   "artifact": {},
   "validation_errors": [],
   "scorecard": {},
+  "provider_response": {
+    "text": "string",
+    "metadata": {},
+    "content_hash": "string"
+  },
   "started_at": "iso8601",
   "ended_at": "iso8601"
 }

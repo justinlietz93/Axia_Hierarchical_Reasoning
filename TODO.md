@@ -229,10 +229,10 @@ ADRs: `ADR-0005`, `ADR-0004`
 
 ADRs: `ADR-0006`, `ADR-0008`
 
-- [ ] Step 6.1.1 - Define run manifest schema.
-- [ ] Step 6.1.2 - Include model profile identity, prompt hashes, canonical request, constitution, work graph, node results, final answer, memory candidates, and metrics.
-- [ ] Step 6.1.3 - Version public manifest schema.
-- [ ] Step 6.1.4 - Add tests for complete trace requirements.
+- [x] Step 6.1.1 - Define run manifest schema.
+- [x] Step 6.1.2 - Include model profile identity, prompt hashes, canonical request, constitution, work graph, node results, final answer, memory candidates, and metrics.
+- [x] Step 6.1.3 - Version public manifest schema.
+- [x] Step 6.1.4 - Add tests for complete trace requirements.
 
 ### Task 6.2 - Implement Final Synthesis
 

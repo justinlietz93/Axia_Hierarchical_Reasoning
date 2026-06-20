@@ -62,6 +62,13 @@ class ScorePolicy:
             return "regenerate"
         return "ask_user"
 
+    def to_payload(self) -> dict[str, float]:
+        return {
+            "accept_threshold": self.accept_threshold,
+            "repair_threshold": self.repair_threshold,
+            "regenerate_threshold": self.regenerate_threshold,
+        }
+
 
 @dataclass(frozen=True)
 class WorkNode:
@@ -115,6 +122,20 @@ class WorkNode:
                 message=f"node {self.node_id} has unsupported failure behavior {self.failure_behavior!r}",
             )
 
+    def to_payload(self) -> dict[str, object]:
+        return {
+            "node_id": self.node_id.value,
+            "kind": self.kind,
+            "depends_on": [node_id.value for node_id in self.depends_on],
+            "input_schema": dict(self.input_schema),
+            "output_schema": dict(self.output_schema),
+            "context_scope": list(self.context_scope),
+            "allowed_operations": list(self.allowed_operations),
+            "retry_limit": self.retry_limit,
+            "score_policy": self.score_policy.to_payload(),
+            "failure_behavior": self.failure_behavior,
+        }
+
 
 @dataclass(frozen=True)
 class WorkEdge:
@@ -138,6 +159,13 @@ class RefinementCycle:
                 kind="work_graph_unbounded_refinement",
                 message="refinement cycles require a positive max_iterations",
             )
+
+    def to_payload(self) -> dict[str, object]:
+        return {
+            "from_node_id": self.from_node_id.value,
+            "to_node_id": self.to_node_id.value,
+            "max_iterations": self.max_iterations,
+        }
 
 
 @dataclass(frozen=True)
@@ -186,6 +214,13 @@ class WorkGraph:
     def topological_order(self) -> tuple[WorkNode, ...]:
         node_map = self._node_map()
         return tuple(node_map[node_id] for node_id in self._topological_node_ids(node_map))
+
+    def to_payload(self) -> dict[str, object]:
+        return {
+            "constitution_revision_hash": self.constitution_revision_hash,
+            "nodes": [node.to_payload() for node in self.nodes],
+            "refinement_cycles": [cycle.to_payload() for cycle in self.refinement_cycles],
+        }
 
     def _node_map(self) -> dict[NodeId, WorkNode]:
         node_map = {node.node_id: node for node in self.nodes}
