@@ -789,12 +789,16 @@ Every prompt must be built from canonical JSON serialization:
 
 ```json
 {
+  "revision": 1,
+  "previous_revision_hash": null,
+  "source_request_hash": "string",
+  "canonical_request_hash": "string",
   "mission": "string",
   "deliverable_type": "answer|spec|code_plan|research_summary|document|debug_plan",
-  "user_visible_goal": "string",
+  "deliverable_definition": "string",
   "constraints": ["string"],
   "non_goals": ["string"],
-  "allowed_tools": ["none|context_provider|filesystem|web|shell|code_runner"],
+  "allowed_operations": ["none|context_provider|filesystem|web|shell|code_runner"],
   "required_evidence": ["string"],
   "quality_rubric": [
     {
@@ -806,6 +810,7 @@ Every prompt must be built from canonical JSON serialization:
   "max_depth": 4,
   "max_model_calls": 24,
   "max_retries_per_node": 2,
+  "max_seconds": 300,
   "stop_conditions": ["string"]
 }
 ```

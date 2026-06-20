@@ -115,11 +115,11 @@ ADRs: `ADR-0003`, `ADR-0009`
 
 ADRs: `ADR-0003`, `ADR-0004`
 
-- [ ] Step 2.2.1 - Define the task constitution schema.
-- [ ] Step 2.2.2 - Include mission, deliverable definition, constraints, non-goals, allowed operations, required evidence, rubric, stop criteria, max depth, max calls, retries, and max time.
-- [ ] Step 2.2.3 - Treat the constitution as immutable for a run unless a user revision creates a new explicit revision.
-- [ ] Step 2.2.4 - Add tests proving the work graph cannot be generated without a constitution.
-- [ ] Step 2.2.5 - Add tests for run-limit presence before critique/repair loops can start.
+- [x] Step 2.2.1 - Define the task constitution schema.
+- [x] Step 2.2.2 - Include mission, deliverable definition, constraints, non-goals, allowed operations, required evidence, rubric, stop criteria, max depth, max calls, retries, and max time.
+- [x] Step 2.2.3 - Treat the constitution as immutable for a run unless a user revision creates a new explicit revision.
+- [x] Step 2.2.4 - Add tests proving the work graph cannot be generated without a constitution.
+- [x] Step 2.2.5 - Add tests for run-limit presence before critique/repair loops can start.
 
 ---
 
