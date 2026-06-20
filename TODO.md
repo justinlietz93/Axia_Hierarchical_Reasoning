@@ -238,10 +238,10 @@ ADRs: `ADR-0006`, `ADR-0008`
 
 ADRs: `ADR-0006`, `ADR-0005`
 
-- [ ] Step 6.2.1 - Synthesize final answers from accepted artifacts only.
-- [ ] Step 6.2.2 - Include constitution, accepted outputs, scorecards, unresolved caveats, requested format, and style constraints.
-- [ ] Step 6.2.3 - Reject or repair final answers that introduce unsupported major claims.
-- [ ] Step 6.2.4 - Add tests where final synthesis tries to use a rejected artifact.
+- [x] Step 6.2.1 - Synthesize final answers from accepted artifacts only.
+- [x] Step 6.2.2 - Include constitution, accepted outputs, scorecards, unresolved caveats, requested format, and style constraints.
+- [x] Step 6.2.3 - Reject or repair final answers that introduce unsupported major claims.
+- [x] Step 6.2.4 - Add tests where final synthesis tries to use a rejected artifact.
 
 ### Task 6.3 - Implement Replay
 

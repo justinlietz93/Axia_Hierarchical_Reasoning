@@ -37,6 +37,7 @@ CONSTITUTION_FIELDS_BY_NODE_KIND: Mapping[str, tuple[str, ...]] = {
     ),
     "critique": ("mission", "deliverable_definition", "constraints", "non_goals", "quality_rubric"),
     "verify": ("mission", "deliverable_definition", "constraints", "quality_rubric"),
+    "final": ("mission", "deliverable_definition", "constraints", "non_goals", "quality_rubric", "stop_conditions"),
 }
 DEFAULT_CONSTITUTION_FIELDS = ("mission", "deliverable_definition", "constraints", "non_goals")
 

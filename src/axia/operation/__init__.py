@@ -2,6 +2,12 @@
 
 from axia.operation.canonical_request_builder import build_canonical_request
 from axia.operation.context_retrieval import ContextRetrieval, retrieve_context
+from axia.operation.final_synthesis import (
+    compile_final_synthesis_request,
+    execute_final_synthesis,
+    form_final_synthesis_context,
+    parse_final_synthesis_response,
+)
 from axia.operation.memory_candidate_emitter import emit_memory_candidate
 from axia.operation.repair_context_packer import pack_repair_context
 from axia.operation.run_manifest_recorder import record_run_manifest
@@ -17,6 +23,10 @@ __all__ = [
     "build_canonical_request",
     "ContextRetrieval",
     "retrieve_context",
+    "compile_final_synthesis_request",
+    "execute_final_synthesis",
+    "form_final_synthesis_context",
+    "parse_final_synthesis_response",
     "emit_memory_candidate",
     "pack_repair_context",
     "record_run_manifest",

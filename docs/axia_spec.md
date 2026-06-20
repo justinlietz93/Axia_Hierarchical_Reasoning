@@ -721,6 +721,8 @@ Purpose: produce the final user-facing response.
 
 It must not introduce new major claims unless supported by accepted artifacts.
 
+The finalizer must return claim-to-artifact support records. Axia renders the user-facing answer from those supported claims and supplied unresolved caveats rather than accepting untracked model prose.
+
 ### 12.10 Memory Candidate Agent
 
 Purpose: propose memory candidates for an external memory module.

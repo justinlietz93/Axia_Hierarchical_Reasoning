@@ -15,6 +15,14 @@ from axia.formation.context_pack import (
     ContextReference,
     build_context_pack,
 )
+from axia.formation.final_answer import (
+    FINAL_SYNTHESIS_SCHEMA,
+    AcceptedArtifact,
+    FinalAnswer,
+    FinalClaim,
+    FinalSynthesisContext,
+    FinalSynthesisFailure,
+)
 from axia.formation.micro_agent import (
     ArtifactEvaluator,
     MicroAgentContract,
@@ -96,6 +104,12 @@ __all__ = [
     "ContextPackFailure",
     "ContextReference",
     "build_context_pack",
+    "FINAL_SYNTHESIS_SCHEMA",
+    "AcceptedArtifact",
+    "FinalAnswer",
+    "FinalClaim",
+    "FinalSynthesisContext",
+    "FinalSynthesisFailure",
     "ArtifactEvaluator",
     "MicroAgentContract",
     "MicroAgentEvaluation",

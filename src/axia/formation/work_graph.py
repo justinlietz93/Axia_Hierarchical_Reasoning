@@ -337,7 +337,15 @@ def build_standard_work_graph(constitution: TaskConstitution | None) -> WorkGrap
             "retry",
         ),
         _standard_node("verify", "verify", ("repair", "constitute", "retrieve"), ("repaired_draft", "constitution", "retrieved_evidence"), (), 0, "fail_run"),
-        _standard_node("final", "final", ("repair", "verify"), ("repaired_draft", "verification"), (), 0, "fail_run"),
+        _standard_node(
+            "final",
+            "final",
+            ("repair", "verify"),
+            ("constitution", "accepted_artifacts", "scorecards", "unresolved_caveats", "requested_format", "style_constraints"),
+            (),
+            0,
+            "fail_run",
+        ),
         _standard_node("memory_candidates", "emit_memory_candidate", ("final",), ("final_answer",), (), 0, "continue_with_caveat"),
     )
     return form_work_graph(
