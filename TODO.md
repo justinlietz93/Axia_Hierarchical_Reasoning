@@ -205,11 +205,11 @@ ADRs: `ADR-0005`, `ADR-0007`
 
 ADRs: `ADR-0005`, `ADR-0009`
 
-- [ ] Step 5.2.1 - Define scorecard schema.
-- [ ] Step 5.2.2 - Score relevance, completeness, consistency, specificity, evidence use, constraint compliance, and final usability.
-- [ ] Step 5.2.3 - Prefer deterministic checks where possible.
-- [ ] Step 5.2.4 - Bound model-based critique behind schemas and thresholds.
-- [ ] Step 5.2.5 - Store scorecards with artifact and node lineage.
+- [x] Step 5.2.1 - Define scorecard schema.
+- [x] Step 5.2.2 - Score relevance, completeness, consistency, specificity, evidence use, constraint compliance, and final usability.
+- [x] Step 5.2.3 - Prefer deterministic checks where possible.
+- [x] Step 5.2.4 - Bound model-based critique behind schemas and thresholds.
+- [x] Step 5.2.5 - Store scorecards with artifact and node lineage.
 
 ### Task 5.3 - Implement Bounded Repair
 

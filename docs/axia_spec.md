@@ -890,6 +890,11 @@ The core budget is a deterministic serialized-character ceiling. A future model 
 
 ```json
 {
+  "schema_version": 1,
+  "scorecard_id": "string",
+  "source_run_id": "string",
+  "source_node_id": "string",
+  "source_artifact_id": "string",
   "overall": 0.0,
   "dimensions": [
     {
@@ -1150,7 +1155,7 @@ Deterministic checks include:
 - no unresolved placeholder text;
 - no unsupported tool claims.
 
-Model-based scoring is allowed, but it must be bounded by schema and threshold rules.
+Model-based scoring is allowed, but it must be parsed through the scorecard schema. The controller recomputes the aggregate and threshold decision from the submitted dimensions; a model critique cannot declare acceptance on its own.
 
 ### 18.2 Score Aggregation
 
