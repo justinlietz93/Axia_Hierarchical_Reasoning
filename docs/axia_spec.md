@@ -819,22 +819,25 @@ Every prompt must be built from canonical JSON serialization:
 
 ```json
 {
-  "graph_id": "string",
+  "constitution_revision_hash": "string",
   "nodes": [
     {
-      "node_id": "N1",
-      "type": "clarify|retrieve|analyze|draft|critique|repair|merge|verify|finalize|emit_memory_candidate",
-      "title": "string",
+      "node_id": "node_string",
+      "kind": "canonicalize|constitute|retrieve|decompose|assemble_context|analyze|draft|critique|repair|merge|verify|finalize|synthesize|emit_memory_candidate",
       "depends_on": [],
-      "agent": "string",
-      "input_artifacts": [],
-      "output_schema": "string",
-      "retry_policy": {
-        "max_retries": 2,
-        "repair_agent": "repair"
+      "input_schema": {},
+      "output_schema": {},
+      "context_scope": ["string"],
+      "retry_limit": 2,
+      "score_policy": {
+        "accept_threshold": 0.82,
+        "repair_threshold": 0.65
       },
-      "acceptance_threshold": 0.82
+      "failure_behavior": "fail_run|retry|continue_with_caveat"
     }
+  ],
+  "refinement_cycles": [
+    {"from_node_id": "node_repair", "to_node_id": "node_critique", "max_iterations": 2}
   ]
 }
 ```

@@ -17,6 +17,17 @@ from axia.formation.task_constitution import (
     require_refinement_limits,
     require_task_constitution,
 )
+from axia.formation.work_graph import (
+    FAILURE_BEHAVIORS,
+    WORK_NODE_KINDS,
+    RefinementCycle,
+    ScorePolicy,
+    WorkEdge,
+    WorkGraph,
+    WorkGraphFailure,
+    WorkNode,
+    form_work_graph,
+)
 
 __all__ = [
     "CANONICAL_REQUEST_SCHEMA",
@@ -32,4 +43,13 @@ __all__ = [
     "build_task_constitution",
     "require_refinement_limits",
     "require_task_constitution",
+    "FAILURE_BEHAVIORS",
+    "WORK_NODE_KINDS",
+    "RefinementCycle",
+    "ScorePolicy",
+    "WorkEdge",
+    "WorkGraph",
+    "WorkGraphFailure",
+    "WorkNode",
+    "form_work_graph",
 ]

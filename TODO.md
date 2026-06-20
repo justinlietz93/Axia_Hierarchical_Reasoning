@@ -129,11 +129,11 @@ ADRs: `ADR-0003`, `ADR-0004`
 
 ADRs: `ADR-0004`, `ADR-0003`
 
-- [ ] Step 3.1.1 - Define node, edge, dependency, and graph schemas.
-- [ ] Step 3.1.2 - Support standard node kinds: canonicalize, constitute, retrieve, analyze, draft, critique, repair, merge, verify, finalize, and emit_memory_candidate.
-- [ ] Step 3.1.3 - Require every node to declare input schema, output schema, context scope, retry policy, score policy, and failure behavior.
-- [ ] Step 3.1.4 - Reject unbounded cycles.
-- [ ] Step 3.1.5 - Add tests for topological order and bounded refinement cycles.
+- [x] Step 3.1.1 - Define node, edge, dependency, and graph schemas.
+- [x] Step 3.1.2 - Support standard node kinds: canonicalize, constitute, retrieve, analyze, draft, critique, repair, merge, verify, finalize, and emit_memory_candidate.
+- [x] Step 3.1.3 - Require every node to declare input schema, output schema, context scope, retry policy, score policy, and failure behavior.
+- [x] Step 3.1.4 - Reject unbounded cycles.
+- [x] Step 3.1.5 - Add tests for topological order and bounded refinement cycles.
 
 ### Task 3.2 - Build Standard Reasoning Graph
 
