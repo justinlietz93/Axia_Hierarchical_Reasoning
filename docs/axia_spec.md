@@ -905,6 +905,7 @@ The core budget is a deterministic serialized-character ceiling. A future model 
 
 ```json
 {
+  "schema_version": 1,
   "candidate_id": "string",
   "type": "preference|project|fact|pattern|correction|plan_template|failure_case",
   "proposed_scope": "global|project|conversation|run",
@@ -918,6 +919,8 @@ The core budget is a deterministic serialized-character ceiling. A future model 
   "tags": ["string"]
 }
 ```
+
+Axia may form and expose this projection in a run trace. It does not persist, promote, search, or delete durable memory from this projection.
 
 ---
 

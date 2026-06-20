@@ -181,11 +181,11 @@ ADRs: `ADR-0002`
 
 ADRs: `ADR-0002`, `ADR-0006`
 
-- [ ] Step 4.3.1 - Define `MemoryCandidate` projection schema.
-- [ ] Step 4.3.2 - Include source run ID, source artifact IDs, content, proposed scope, confidence, reason, caveats, and tags.
-- [ ] Step 4.3.3 - Emit candidates only as projections.
-- [ ] Step 4.3.4 - Do not persist candidates into durable memory inside Axia.
-- [ ] Step 4.3.5 - Add tests proving memory candidates are not durable writes.
+- [x] Step 4.3.1 - Define `MemoryCandidate` projection schema.
+- [x] Step 4.3.2 - Include source run ID, source artifact IDs, content, proposed scope, confidence, reason, caveats, and tags.
+- [x] Step 4.3.3 - Emit candidates only as projections.
+- [x] Step 4.3.4 - Do not persist candidates into durable memory inside Axia.
+- [x] Step 4.3.5 - Add tests proving memory candidates are not durable writes.
 
 ---
 

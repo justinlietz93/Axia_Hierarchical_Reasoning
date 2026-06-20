@@ -24,6 +24,13 @@ from axia.formation.micro_agent import (
     validate_context_pack,
     validate_typed_payload,
 )
+from axia.formation.memory_candidate import (
+    MEMORY_CANDIDATE_SCHEMA,
+    MEMORY_CANDIDATE_SCOPES,
+    MEMORY_CANDIDATE_TYPES,
+    MemoryCandidate,
+    MemoryCandidateFailure,
+)
 from axia.formation.task_constitution import (
     DEFAULT_LIMITS,
     ConstitutionLimits,
@@ -66,6 +73,11 @@ __all__ = [
     "TypedArtifact",
     "validate_context_pack",
     "validate_typed_payload",
+    "MEMORY_CANDIDATE_SCHEMA",
+    "MEMORY_CANDIDATE_SCOPES",
+    "MEMORY_CANDIDATE_TYPES",
+    "MemoryCandidate",
+    "MemoryCandidateFailure",
     "DEFAULT_LIMITS",
     "ConstitutionLimits",
     "QualityCriterion",

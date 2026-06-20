@@ -57,3 +57,7 @@ class NodeId(StableId):
 class ArtifactId(StableId):
     prefix: ClassVar[str] = "artifact"
 
+
+@dataclass(frozen=True)
+class CandidateId(StableId):
+    prefix: ClassVar[str] = "candidate"
