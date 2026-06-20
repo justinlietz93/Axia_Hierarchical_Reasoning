@@ -56,6 +56,7 @@ class WorkNode:
     input_schema: Mapping[str, object]
     output_schema: Mapping[str, object]
     context_scope: tuple[str, ...]
+    allowed_operations: tuple[str, ...]
     retry_limit: int
     score_policy: ScorePolicy
     failure_behavior: str
@@ -75,6 +76,16 @@ class WorkNode:
             raise WorkGraphFailure(
                 kind="work_graph_missing_context_scope",
                 message=f"node {self.node_id} requires an explicit context scope",
+            )
+        if any(not operation.strip() for operation in self.allowed_operations):
+            raise WorkGraphFailure(
+                kind="work_graph_invalid_allowed_operations",
+                message=f"node {self.node_id} has a blank allowed operation",
+            )
+        if len(set(self.allowed_operations)) != len(self.allowed_operations):
+            raise WorkGraphFailure(
+                kind="work_graph_invalid_allowed_operations",
+                message=f"node {self.node_id} repeats an allowed operation",
             )
         if self.retry_limit < 0:
             raise WorkGraphFailure(
@@ -227,6 +238,17 @@ def form_work_graph(
     """Form a graph only from an admitted immutable task constitution."""
 
     admitted_constitution = require_task_constitution(constitution)
+    permitted_operations = set(admitted_constitution.allowed_operations) - {"none"}
+    for node in nodes:
+        unpermitted_operations = set(node.allowed_operations) - permitted_operations
+        if unpermitted_operations:
+            raise WorkGraphFailure(
+                kind="work_graph_unpermitted_operation",
+                message=(
+                    f"node {node.node_id} requests operations not admitted by the constitution: "
+                    f"{', '.join(sorted(unpermitted_operations))}"
+                ),
+            )
     return WorkGraph(
         constitution_revision_hash=admitted_constitution.revision_hash(),
         nodes=nodes,
@@ -239,23 +261,32 @@ def build_standard_work_graph(constitution: TaskConstitution | None) -> WorkGrap
 
     admitted_constitution = require_task_constitution(constitution)
     nodes = (
-        _standard_node("canonicalize", "canonicalize", (), ("source_request",), 0, "fail_run"),
-        _standard_node("constitute", "constitute", ("canonicalize",), ("canonical_request",), 0, "fail_run"),
-        _standard_node("retrieve", "retrieve", ("constitute",), ("constitution",), 0, "continue_with_caveat"),
-        _standard_node("plan", "plan", ("constitute", "retrieve"), ("constitution", "retrieved_evidence"), 0, "fail_run"),
-        _standard_node("draft", "draft", ("plan",), ("plan",), 0, "fail_run"),
-        _standard_node("critique", "critique", ("draft", "constitute"), ("draft", "constitution"), 0, "fail_run"),
+        _standard_node("canonicalize", "canonicalize", (), ("source_request",), (), 0, "fail_run"),
+        _standard_node("constitute", "constitute", ("canonicalize",), ("canonical_request",), (), 0, "fail_run"),
+        _standard_node(
+            "retrieve",
+            "retrieve",
+            ("constitute",),
+            ("constitution",),
+            tuple(operation for operation in admitted_constitution.allowed_operations if operation != "none"),
+            0,
+            "continue_with_caveat",
+        ),
+        _standard_node("plan", "plan", ("constitute", "retrieve"), ("constitution", "retrieved_evidence"), (), 0, "fail_run"),
+        _standard_node("draft", "draft", ("plan",), ("plan",), (), 0, "fail_run"),
+        _standard_node("critique", "critique", ("draft", "constitute"), ("draft", "constitution"), (), 0, "fail_run"),
         _standard_node(
             "repair",
             "repair",
             ("draft", "critique"),
             ("draft", "critique"),
+            (),
             admitted_constitution.limits.max_retries_per_node,
             "retry",
         ),
-        _standard_node("verify", "verify", ("repair", "constitute", "retrieve"), ("repaired_draft", "constitution", "retrieved_evidence"), 0, "fail_run"),
-        _standard_node("final", "final", ("repair", "verify"), ("repaired_draft", "verification"), 0, "fail_run"),
-        _standard_node("memory_candidates", "emit_memory_candidate", ("final",), ("final_answer",), 0, "continue_with_caveat"),
+        _standard_node("verify", "verify", ("repair", "constitute", "retrieve"), ("repaired_draft", "constitution", "retrieved_evidence"), (), 0, "fail_run"),
+        _standard_node("final", "final", ("repair", "verify"), ("repaired_draft", "verification"), (), 0, "fail_run"),
+        _standard_node("memory_candidates", "emit_memory_candidate", ("final",), ("final_answer",), (), 0, "continue_with_caveat"),
     )
     return form_work_graph(
         admitted_constitution,
@@ -275,6 +306,7 @@ def _standard_node(
     kind: str,
     dependencies: tuple[str, ...],
     context_scope: tuple[str, ...],
+    allowed_operations: tuple[str, ...],
     retry_limit: int,
     failure_behavior: str,
 ) -> WorkNode:
@@ -285,6 +317,7 @@ def _standard_node(
         input_schema={"type": "object", "required": list(context_scope)},
         output_schema={"type": "object"},
         context_scope=context_scope,
+        allowed_operations=allowed_operations,
         retry_limit=retry_limit,
         score_policy=ScorePolicy(accept_threshold=0.82, repair_threshold=0.65),
         failure_behavior=failure_behavior,

@@ -32,7 +32,13 @@ def _constitution():
     )
 
 
-def _node(name: str, kind: str, depends_on: tuple[str, ...] = (), retry_limit: int = 2) -> WorkNode:
+def _node(
+    name: str,
+    kind: str,
+    depends_on: tuple[str, ...] = (),
+    retry_limit: int = 2,
+    allowed_operations: tuple[str, ...] = (),
+) -> WorkNode:
     return WorkNode(
         node_id=NodeId.from_value(f"node_{name}"),
         kind=kind,
@@ -40,6 +46,7 @@ def _node(name: str, kind: str, depends_on: tuple[str, ...] = (), retry_limit: i
         input_schema={"type": "object"},
         output_schema={"type": "object"},
         context_scope=("constitution",),
+        allowed_operations=allowed_operations,
         retry_limit=retry_limit,
         score_policy=ScorePolicy(accept_threshold=0.82, repair_threshold=0.65),
         failure_behavior="retry",
@@ -128,6 +135,15 @@ class WorkGraphTests(unittest.TestCase):
 
         self.assertEqual(failure.exception.kind, "task_constitution_required")
 
+    def test_rejects_operations_not_admitted_by_the_constitution(self) -> None:
+        with self.assertRaises(WorkGraphFailure) as failure:
+            form_work_graph(
+                _constitution(),
+                (_node("draft", "draft", allowed_operations=("filesystem",)),),
+            )
+
+        self.assertEqual(failure.exception.kind, "work_graph_unpermitted_operation")
+
     def test_standard_graph_is_deterministic_and_has_narrow_ordered_nodes(self) -> None:
         constitution = _constitution()
         first = build_standard_work_graph(constitution)
@@ -150,6 +166,8 @@ class WorkGraphTests(unittest.TestCase):
             ],
         )
         self.assertTrue(all(node.context_scope for node in first.nodes))
+        retrieve_node = next(node for node in first.nodes if node.kind == "retrieve")
+        self.assertEqual(retrieve_node.allowed_operations, ())
         self.assertEqual(first.refinement_cycles[0].max_iterations, constitution.limits.max_retries_per_node)
 
 

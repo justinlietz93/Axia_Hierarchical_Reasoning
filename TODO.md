@@ -148,10 +148,10 @@ ADRs: `ADR-0004`, `ADR-0009`
 
 ADRs: `ADR-0004`, `ADR-0007`
 
-- [ ] Step 3.3.1 - Define micro-agent as role prompt plus schema plus evaluator.
-- [ ] Step 3.3.2 - Implement prompt compilation from node contract and context pack.
-- [ ] Step 3.3.3 - Ensure micro-agents do not share implicit global memory.
-- [ ] Step 3.3.4 - Add tests proving provider output must pass through typed parsing before the controller can use it.
+- [x] Step 3.3.1 - Define micro-agent as role prompt plus schema plus evaluator.
+- [x] Step 3.3.2 - Implement prompt compilation from node contract and context pack.
+- [x] Step 3.3.3 - Ensure micro-agents do not share implicit global memory.
+- [x] Step 3.3.4 - Add tests proving provider output must pass through typed parsing before the controller can use it.
 
 ---
 

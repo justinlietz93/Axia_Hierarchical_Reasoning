@@ -828,6 +828,7 @@ Every prompt must be built from canonical JSON serialization:
       "input_schema": {},
       "output_schema": {},
       "context_scope": ["string"],
+      "allowed_operations": ["context_provider|filesystem|web|shell|code_runner"],
       "retry_limit": 2,
       "score_policy": {
         "accept_threshold": 0.82,
