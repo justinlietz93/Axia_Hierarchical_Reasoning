@@ -167,7 +167,12 @@ class WorkGraphTests(unittest.TestCase):
         )
         self.assertTrue(all(node.context_scope for node in first.nodes))
         retrieve_node = next(node for node in first.nodes if node.kind == "retrieve")
+        repair_node = next(node for node in first.nodes if node.kind == "repair")
         self.assertEqual(retrieve_node.allowed_operations, ())
+        self.assertEqual(
+            repair_node.context_scope,
+            ("failed_artifact", "scorecard", "relevant_evidence", "repair_target"),
+        )
         self.assertEqual(first.refinement_cycles[0].max_iterations, constitution.limits.max_retries_per_node)
 
 

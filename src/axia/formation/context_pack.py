@@ -10,7 +10,7 @@ from axia.shared.errors import AxiaError
 from axia.shared.ids import NodeId, stable_json_hash
 
 
-CONTEXT_REFERENCE_TYPES = frozenset({"request", "artifact", "evidence"})
+CONTEXT_REFERENCE_TYPES = frozenset({"request", "artifact", "evidence", "scorecard", "policy"})
 CONTEXT_BUDGETS_BY_NODE_KIND: Mapping[str, int] = {
     "canonicalize": 4_800,
     "constitute": 6_400,
@@ -250,7 +250,11 @@ def _validate_reference_sources(
     prior_artifacts: tuple[ContextReference, ...],
     context_records: tuple[ContextReference, ...],
 ) -> None:
-    invalid_prior_sources = [reference.source_type for reference in prior_artifacts if reference.source_type not in {"request", "artifact"}]
+    invalid_prior_sources = [
+        reference.source_type
+        for reference in prior_artifacts
+        if reference.source_type not in {"request", "artifact", "scorecard", "policy"}
+    ]
     if invalid_prior_sources:
         raise ContextPackFailure(
             kind="context_pack_invalid_prior_source",

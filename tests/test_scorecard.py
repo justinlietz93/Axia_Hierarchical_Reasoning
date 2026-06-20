@@ -93,7 +93,7 @@ class ScorecardTests(unittest.TestCase):
         self.assertEqual(recorded.payload["source_node_id"], "node_verify")
         self.assertEqual(recorded.payload["source_artifact_id"], "artifact_answer")
 
-    def test_failed_deterministic_checks_require_regeneration(self) -> None:
+    def test_failed_deterministic_checks_require_clarification(self) -> None:
         scorecard = score_artifact(
             ScorecardId.from_value("scorecard_failed_answer"),
             _constitution(),
@@ -101,7 +101,7 @@ class ScorecardTests(unittest.TestCase):
         )
 
         failed_dimensions = [dimension for dimension in scorecard.dimensions if dimension.score == 0]
-        self.assertEqual(scorecard.decision, "regenerate")
+        self.assertEqual(scorecard.decision, "ask_user")
         self.assertTrue(all(dimension.repair_instruction for dimension in failed_dimensions))
 
     def test_model_critique_cannot_override_controller_aggregate_or_thresholds(self) -> None:

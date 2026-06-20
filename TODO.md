@@ -215,11 +215,11 @@ ADRs: `ADR-0005`, `ADR-0009`
 
 ADRs: `ADR-0005`, `ADR-0004`
 
-- [ ] Step 5.3.1 - Define repair policy thresholds.
-- [ ] Step 5.3.2 - Repair only specific failed dimensions.
-- [ ] Step 5.3.3 - Include failed artifact, scorecard, relevant evidence, and target threshold in repair context.
-- [ ] Step 5.3.4 - Enforce retry limits per node and total run limits.
-- [ ] Step 5.3.5 - Add contradiction tests for repair loops attempting to exceed limits.
+- [x] Step 5.3.1 - Define repair policy thresholds.
+- [x] Step 5.3.2 - Repair only specific failed dimensions.
+- [x] Step 5.3.3 - Include failed artifact, scorecard, relevant evidence, and target threshold in repair context.
+- [x] Step 5.3.4 - Enforce retry limits per node and total run limits.
+- [x] Step 5.3.5 - Add contradiction tests for repair loops attempting to exceed limits.
 
 ---
 

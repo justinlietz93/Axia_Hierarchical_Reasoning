@@ -52,6 +52,15 @@ from axia.formation.scorecard import (
     score_artifact,
     scorecard_from_model_critique,
 )
+from axia.formation.repair import (
+    REPAIR_CONTEXT_SCOPES,
+    RepairAdmission,
+    RepairBudget,
+    RepairContext,
+    RepairFailure,
+    admit_repair_attempt,
+    form_repair_context,
+)
 from axia.formation.task_constitution import (
     DEFAULT_LIMITS,
     ConstitutionLimits,
@@ -116,6 +125,13 @@ __all__ = [
     "ScorecardFailure",
     "score_artifact",
     "scorecard_from_model_critique",
+    "REPAIR_CONTEXT_SCOPES",
+    "RepairAdmission",
+    "RepairBudget",
+    "RepairContext",
+    "RepairFailure",
+    "admit_repair_attempt",
+    "form_repair_context",
     "DEFAULT_LIMITS",
     "ConstitutionLimits",
     "QualityCriterion",

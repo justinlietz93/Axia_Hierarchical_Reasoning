@@ -33,17 +33,34 @@ FAILURE_BEHAVIORS = frozenset({"fail_run", "retry", "continue_with_caveat"})
 
 @dataclass(frozen=True)
 class ScorePolicy:
-    """Per-node acceptance and repair thresholds."""
+    """Per-node acceptance, repair, regeneration, and clarification thresholds."""
 
     accept_threshold: float
     repair_threshold: float
+    regenerate_threshold: float = 0.45
 
     def __post_init__(self) -> None:
-        if not 0 < self.repair_threshold <= self.accept_threshold <= 1:
+        if not 0 <= self.regenerate_threshold <= self.repair_threshold <= self.accept_threshold <= 1:
             raise WorkGraphFailure(
                 kind="work_graph_invalid_score_policy",
-                message="score thresholds must satisfy 0 < repair <= accept <= 1",
+                message="score thresholds must satisfy 0 <= regenerate <= repair <= accept <= 1",
             )
+
+    def decision_for(self, lowest_dimension_score: float) -> str:
+        """Choose the only next action permitted by this node's score policy."""
+
+        if not 0 <= lowest_dimension_score <= 1:
+            raise WorkGraphFailure(
+                kind="work_graph_invalid_score",
+                message="score policy decisions require a score within [0, 1]",
+            )
+        if lowest_dimension_score >= self.accept_threshold:
+            return "accept"
+        if lowest_dimension_score >= self.repair_threshold:
+            return "repair"
+        if lowest_dimension_score >= self.regenerate_threshold:
+            return "regenerate"
+        return "ask_user"
 
 
 @dataclass(frozen=True)
@@ -279,7 +296,7 @@ def build_standard_work_graph(constitution: TaskConstitution | None) -> WorkGrap
             "repair",
             "repair",
             ("draft", "critique"),
-            ("draft", "critique"),
+            ("failed_artifact", "scorecard", "relevant_evidence", "repair_target"),
             (),
             admitted_constitution.limits.max_retries_per_node,
             "retry",

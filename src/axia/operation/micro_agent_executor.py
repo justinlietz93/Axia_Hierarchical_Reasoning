@@ -101,6 +101,7 @@ def _node_contract_payload(contract: MicroAgentContract) -> dict[str, object]:
         "score_policy": {
             "accept_threshold": node.score_policy.accept_threshold,
             "repair_threshold": node.score_policy.repair_threshold,
+            "regenerate_threshold": node.score_policy.regenerate_threshold,
         },
         "failure_behavior": node.failure_behavior,
     }

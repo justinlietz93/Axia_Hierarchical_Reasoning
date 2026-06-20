@@ -91,6 +91,14 @@ class ScoreDimension:
         if self.repair_instruction is not None and not self.repair_instruction.strip():
             raise ScorecardFailure(kind="scorecard_invalid_repair_instruction", message="repair instructions must be non-empty when present")
 
+    def to_payload(self) -> dict[str, object]:
+        return {
+            "name": self.name,
+            "score": self.score,
+            "reason": self.reason,
+            "repair_instruction": self.repair_instruction,
+        }
+
 
 @dataclass(frozen=True)
 class Scorecard:
@@ -121,15 +129,7 @@ class Scorecard:
             "source_node_id": self.source_node_id.value,
             "source_artifact_id": self.source_artifact_id.value,
             "overall": self.overall,
-            "dimensions": [
-                {
-                    "name": item.name,
-                    "score": item.score,
-                    "reason": item.reason,
-                    "repair_instruction": item.repair_instruction,
-                }
-                for item in self.dimensions
-            ],
+            "dimensions": [item.to_payload() for item in self.dimensions],
             "decision": self.decision,
         }
 
@@ -289,9 +289,4 @@ def _weighted_overall(dimensions: tuple[ScoreDimension, ...], constitution: Task
 
 
 def _decision_for(dimensions: tuple[ScoreDimension, ...], policy: ScorePolicy) -> str:
-    lowest_score = min(dimension.score for dimension in dimensions)
-    if lowest_score >= policy.accept_threshold:
-        return "accept"
-    if lowest_score >= policy.repair_threshold:
-        return "repair"
-    return "regenerate"
+    return policy.decision_for(min(dimension.score for dimension in dimensions))

@@ -709,6 +709,8 @@ It must receive:
 - only the relevant evidence;
 - the target threshold.
 
+The repair target must enumerate only the dimensions below the source node's acceptance threshold. A repair context must not admit an unrelated artifact or the full run trace.
+
 ### 12.8 Merger Agent
 
 Purpose: combine accepted branch artifacts without losing constraints.
@@ -832,7 +834,8 @@ Every prompt must be built from canonical JSON serialization:
       "retry_limit": 2,
       "score_policy": {
         "accept_threshold": 0.82,
-        "repair_threshold": 0.65
+        "repair_threshold": 0.65,
+        "regenerate_threshold": 0.45
       },
       "failure_behavior": "fail_run|retry|continue_with_caveat"
     }
@@ -853,7 +856,7 @@ Every prompt must be built from canonical JSON serialization:
   "references": [
     {
       "scope": "string",
-      "source_type": "request|artifact|evidence",
+      "source_type": "request|artifact|evidence|scorecard|policy",
       "reference_id": "string",
       "content": {},
       "content_hash": "string",
@@ -1167,6 +1170,8 @@ overall = sum(weight_i * score_i) / sum(weight_i)
 
 The controller must store per-dimension scores and not only the aggregate.
 
+The aggregate is a summary. Acceptance and repair routing are gated by the lowest required dimension, so a strong aggregate cannot conceal a failed criterion.
+
 ### 18.3 Thresholds
 
 Default thresholds:
@@ -1451,6 +1456,7 @@ orchestration:
   max_retries_per_node: 2
   default_accept_threshold: 0.82
   default_repair_threshold: 0.65
+  default_regenerate_threshold: 0.45
 
 context:
   top_k: 5
