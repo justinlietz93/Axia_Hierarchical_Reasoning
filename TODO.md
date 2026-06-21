@@ -324,10 +324,10 @@ ADRs: `ADR-0008`, `ADR-0006`
 
 ADRs: `ADR-0002`, `ADR-0001`
 
-- [ ] Step 8.3.1 - Connect an external memory module through `ContextProvider`.
-- [ ] Step 8.3.2 - Send memory candidates through `MemoryCandidateSink` only when configured.
-- [ ] Step 8.3.3 - Keep persistence, promotion, forgetting, conflict resolution, and search outside Axia.
-- [ ] Step 8.3.4 - Add integration tests proving Axia still runs without the memory module.
+- [x] Step 8.3.1 - Connect an external memory module through `ContextProvider`.
+- [x] Step 8.3.2 - Send memory candidates through `MemoryCandidateSink` only when configured.
+- [x] Step 8.3.3 - Keep persistence, promotion, forgetting, conflict resolution, and search outside Axia.
+- [x] Step 8.3.4 - Add integration tests proving Axia still runs without the memory module.
 
 ### Task 8.4 - Integrate External Data-Curation Or Export Module
 

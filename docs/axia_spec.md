@@ -1491,6 +1491,8 @@ ui:
 
 The `context` section controls Axia's run-local evidence assembly only. An external memory module may supply scoped context through `ContextProvider`, and an optional memory-candidate sink may receive projections when explicitly configured at the composition root. Axia does not configure durable-memory read, write, promotion, or forgetting policy.
 
+When no external memory module is configured, Axia retrieves no external memory context and emits no outbound candidate delivery. Candidate formation remains a run-local projection in either configuration.
+
 ### 24.2 `profiles/tiny-default.yaml`
 
 ```yaml

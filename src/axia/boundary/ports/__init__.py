@@ -15,6 +15,7 @@ from axia.boundary.ports.model_provider import (
     ModelResponse,
     ProviderFailure,
 )
+from axia.boundary.ports.memory_candidate_sink import MemoryCandidateSink
 from axia.boundary.ports.run_store import (
     RUN_TRACE_KINDS,
     RunManifestRecord,
@@ -37,6 +38,7 @@ __all__ = [
     "ModelProvider",
     "ModelRequest",
     "ModelResponse",
+    "MemoryCandidateSink",
     "ProviderFailure",
     "RUN_TRACE_KINDS",
     "RunManifestRecord",
