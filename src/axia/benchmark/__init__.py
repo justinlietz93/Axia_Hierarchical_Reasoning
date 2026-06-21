@@ -1,6 +1,11 @@
 """Fixed suites and runner contracts for measuring Axia reasoning improvement."""
 
 from axia.benchmark.harness import BenchmarkFailure, run_benchmark_suite
+from axia.benchmark.comparison import (
+    MVP_MEDIAN_SCORE_DELTA,
+    BenchmarkImprovementResult,
+    compare_mvp_improvement,
+)
 from axia.benchmark.evidence import (
     BenchmarkControlEvidence,
     BenchmarkDecompositionStep,
@@ -37,6 +42,7 @@ __all__ = [
     "BENCHMARK_REPORT_SCHEMA",
     "BENCHMARK_SCORE_DIMENSIONS",
     "BASELINE_BENCHMARK_SUITE",
+    "BenchmarkImprovementResult",
     "AnswerUsefulnessAssessment",
     "AnswerUsefulnessEvaluator",
     "AxiaBenchmarkExecutor",
@@ -58,7 +64,9 @@ __all__ = [
     "BenchmarkSuite",
     "BenchmarkTask",
     "LexicalAnswerUsefulnessEvaluator",
+    "MVP_MEDIAN_SCORE_DELTA",
     "SingleShotBenchmarkRunner",
     "run_benchmark_suite",
+    "compare_mvp_improvement",
     "score_benchmark_report",
 ]

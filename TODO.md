@@ -292,10 +292,10 @@ ADRs: `ADR-0009`, `ADR-0005`
 
 ADRs: `ADR-0009`
 
-- [ ] Step 7.3.1 - Compare Axia standard mode against single-shot baseline.
-- [ ] Step 7.3.2 - Require median score improvement before claiming MVP reasoning uplift.
-- [ ] Step 7.3.3 - Record failure categories when Axia does not improve output.
-- [ ] Step 7.3.4 - Use benchmark results to tune graph, prompts, scoring thresholds, and repair policy.
+- [x] Step 7.3.1 - Compare Axia standard mode against single-shot baseline.
+- [x] Step 7.3.2 - Require median score improvement before claiming MVP reasoning uplift.
+- [x] Step 7.3.3 - Record failure categories when Axia does not improve output.
+- [x] Step 7.3.4 - Use benchmark results to tune graph, prompts, scoring thresholds, and repair policy.
 
 ---
 

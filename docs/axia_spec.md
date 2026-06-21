@@ -1729,7 +1729,7 @@ Benchmark reports preserve two distinct scorecard kinds. A mode-provided run sco
 Pass condition:
 
 ```text
-Axia standard mode improves median score over single-shot by at least 20%.
+Axia standard mode improves median benchmark score over single-shot by at least 0.20 score points.
 ```
 
 ### Gate E: Trace Completeness

@@ -7,6 +7,7 @@ from axia.benchmark import (
     BASELINE_BENCHMARK_SUITE,
     BENCHMARK_SCORE_DIMENSIONS,
     BenchmarkControlEvidence,
+    compare_mvp_improvement,
     BenchmarkDecompositionStep,
     BenchmarkEvidenceSupport,
     BenchmarkExecution,
@@ -136,6 +137,28 @@ class BenchmarkScoringTests(unittest.TestCase):
         self.assertEqual(payload["records"][2]["execution"]["scorecard"]["decision"], "accept")
         self.assertEqual(payload["records"][2]["execution"]["benchmark_scorecard"]["task_id"], "scored_reasoning")
         self.assertEqual(payload["scoring_configuration"]["evaluator_id"], "fixed_answer_usefulness_v1")
+
+        comparison = compare_mvp_improvement(scored_report)
+        self.assertTrue(comparison.gate_passed)
+        self.assertGreaterEqual(comparison.median_score_delta, 0.20)
+
+    def test_uplift_gate_records_failures_and_tuning_targets_when_standard_does_not_improve(self) -> None:
+        report = BenchmarkReport(
+            suite=BenchmarkSuite("no_uplift_v1", (_task(),)),
+            records=(
+                BenchmarkRecord(_task(), _execution("single_shot")),
+                BenchmarkRecord(_task(), _execution("quick")),
+                BenchmarkRecord(_task(), _execution("standard")),
+            ),
+        )
+
+        comparison = compare_mvp_improvement(score_benchmark_report(report, _scorer()))
+
+        self.assertFalse(comparison.gate_passed)
+        self.assertIn("scored_reasoning", comparison.failure_categories)
+        self.assertIn("graph", comparison.tuning_targets)
+        self.assertIn("prompts", comparison.tuning_targets)
+        self.assertIn("scoring_thresholds", comparison.tuning_targets)
 
     def test_rejects_evidence_that_does_not_link_to_a_declared_output_claim(self) -> None:
         with self.assertRaises(ValueError):
