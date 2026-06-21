@@ -1217,7 +1217,7 @@ Budget:
 
 - max calls: 6;
 - max retries per node: 1;
-- max time: 60 seconds.
+- max time: 180 seconds on the standalone CPU-first profile.
 
 ### 19.2 Standard Mode
 

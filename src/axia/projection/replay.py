@@ -36,7 +36,7 @@ class ReplayResult:
     run_id: str
     graph_order: tuple[str, ...]
     node_decisions: tuple[ReplayNodeDecision, ...]
-    final_answer: str
+    final_answer: str | None
     final_source_artifact_ids: tuple[str, ...]
     prompt_hashes: Mapping[str, str]
 
@@ -85,7 +85,12 @@ def replay_manifest_payload(payload: Mapping[str, object]) -> ReplayResult:
             raise ReplayFailure(kind="replay_duplicate_node_result", message="saved replay data repeats a node attempt")
         result_keys.add(key)
         decisions.append(decision)
-    final_answer, final_source_artifact_ids = _replay_final_answer(payload.get("final_answer"), node_results)
+    status = _required_string(payload.get("status"), "replay_manifest_schema_invalid")
+    final_answer, final_source_artifact_ids = _replay_final_answer(
+        payload.get("final_answer"),
+        node_results,
+        allow_absent=status != "complete",
+    )
     return ReplayResult(
         run_id=run_id,
         graph_order=graph_order,
@@ -188,7 +193,14 @@ def _validate_scorecard_lineage(scorecard: Mapping[str, object], run_id: str, no
         raise ReplayFailure(kind="replay_scorecard_lineage_mismatch", message="saved scorecard belongs to another artifact")
 
 
-def _replay_final_answer(value: object, node_results: tuple[Mapping[str, object], ...]) -> tuple[str, tuple[str, ...]]:
+def _replay_final_answer(
+    value: object,
+    node_results: tuple[Mapping[str, object], ...],
+    *,
+    allow_absent: bool,
+) -> tuple[str | None, tuple[str, ...]]:
+    if value is None and allow_absent:
+        return None, ()
     accepted_artifact_ids = {
         artifact_id
         for result in node_results

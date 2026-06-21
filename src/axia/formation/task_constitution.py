@@ -58,7 +58,7 @@ class ConstitutionLimits:
 
 
 DEFAULT_LIMITS: Mapping[str, ConstitutionLimits] = {
-    "brief": ConstitutionLimits(max_depth=2, max_model_calls=6, max_retries_per_node=1, max_seconds=60),
+    "brief": ConstitutionLimits(max_depth=2, max_model_calls=6, max_retries_per_node=1, max_seconds=180),
     "standard": ConstitutionLimits(max_depth=4, max_model_calls=16, max_retries_per_node=2, max_seconds=300),
     "deep": ConstitutionLimits(max_depth=6, max_model_calls=40, max_retries_per_node=2, max_seconds=900),
 }

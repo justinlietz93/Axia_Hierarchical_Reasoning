@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import math
+import re
 from dataclasses import dataclass
 from typing import Mapping
 
@@ -68,6 +70,32 @@ class CanonicalRequest:
 @dataclass(frozen=True)
 class CanonicalRequestFailure(AxiaError):
     """A deterministic canonical-request formation failure."""
+
+
+def require_source_alignment(raw_request: RequestRecord, canonical_request: CanonicalRequest) -> None:
+    """Reject an intake interpretation that discards too much of the literal request."""
+
+    source_terms = _meaningful_terms(raw_request.raw_text)
+    if not source_terms:
+        return
+    canonical_terms = _meaningful_terms(
+        " ".join(
+            (
+                canonical_request.intent,
+                canonical_request.deliverable_type,
+                canonical_request.output_format,
+                *canonical_request.constraints,
+                *canonical_request.needed_context,
+            )
+        )
+    )
+    required_overlap = max(1, math.ceil(len(source_terms) * 0.4))
+    overlap = source_terms & canonical_terms
+    if len(overlap) < required_overlap:
+        raise CanonicalRequestFailure(
+            kind="canonical_request_source_mismatch",
+            message="canonical request does not preserve enough of the literal request for safe execution",
+        )
 
 
 def canonical_request_from_json(raw_request: RequestRecord, text: str) -> CanonicalRequest:
@@ -152,3 +180,7 @@ def _text_collection(payload: Mapping[str, object], field_name: str) -> tuple[st
             message=f"{field_name} must be a list of non-empty strings",
         )
     return tuple(item.strip() for item in value)
+
+
+def _meaningful_terms(value: str) -> set[str]:
+    return {term for term in re.findall(r"[a-z0-9]+", value.lower()) if len(term) >= 4}

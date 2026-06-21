@@ -8,8 +8,9 @@ from axia.formation.canonical_request import (
     CANONICAL_REQUEST_SCHEMA,
     CanonicalRequestFailure,
     canonical_request_from_payload,
+    require_source_alignment,
 )
-from axia.operation import build_canonical_request
+from axia.operation import build_canonical_request, build_raw_request_fallback
 from axia.source import RequestRecord
 
 
@@ -47,6 +48,8 @@ class CanonicalRequestTests(unittest.TestCase):
         self.assertEqual(provider.request.output_schema, CANONICAL_REQUEST_SCHEMA)
         self.assertEqual(provider.request.metadata["stage"], "canonical_request")
         self.assertEqual(provider.request.metadata["source_request_hash"], raw_request.content_hash)
+        self.assertIn("OUTPUT_SCHEMA", provider.request.messages[0].content)
+        self.assertIn('"expected_depth"', provider.request.messages[0].content)
         self.assertEqual(canonical.source_request_hash, raw_request.content_hash)
         self.assertEqual(canonical.intent, "compare database options")
         self.assertEqual(canonical.needed_context, ("project architecture", "storage needs"))
@@ -85,6 +88,27 @@ class CanonicalRequestTests(unittest.TestCase):
             canonical_request_from_payload(RequestRecord.from_text("  "), _valid_payload())
 
         self.assertEqual(failure.exception.kind, "canonical_request_missing_raw_text")
+
+    def test_raw_request_fallback_preserves_the_literal_request_and_declares_its_limit(self) -> None:
+        raw_request = RequestRecord.from_text("Compare SQLite and PostgreSQL for a local-first AI tool.")
+
+        fallback = build_raw_request_fallback(raw_request, expected_depth="brief")
+
+        self.assertEqual(fallback.intent, raw_request.raw_text)
+        self.assertEqual(fallback.expected_depth, "brief")
+        self.assertIn("fallback", fallback.risk_flags[0])
+
+    def test_rejects_schema_valid_intake_that_drops_material_request_terms(self) -> None:
+        raw_request = RequestRecord.from_text("Compare SQLite and PostgreSQL for a local-first AI tool.")
+        canonical = canonical_request_from_payload(
+            raw_request,
+            {**_valid_payload(), "intent": "comparison", "deliverable_type": "tool", "output_format": "brief", "constraints": [], "needed_context": []},
+        )
+
+        with self.assertRaises(CanonicalRequestFailure) as failure:
+            require_source_alignment(raw_request, canonical)
+
+        self.assertEqual(failure.exception.kind, "canonical_request_source_mismatch")
 
 
 if __name__ == "__main__":

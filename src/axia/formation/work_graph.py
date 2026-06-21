@@ -30,6 +30,94 @@ WORK_NODE_KINDS = frozenset(
 )
 FAILURE_BEHAVIORS = frozenset({"fail_run", "retry", "continue_with_caveat"})
 
+CANONICALIZE_OUTPUT_SCHEMA: Mapping[str, object] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": [
+        "intent",
+        "deliverable_type",
+        "constraints",
+        "unknowns",
+        "risk_flags",
+        "output_format",
+        "expected_depth",
+        "needed_context",
+    ],
+    "properties": {
+        "intent": {"type": "string", "minLength": 1},
+        "deliverable_type": {"type": "string", "minLength": 1},
+        "constraints": {"type": "array", "items": {"type": "string"}},
+        "unknowns": {"type": "array", "items": {"type": "string"}},
+        "risk_flags": {"type": "array", "items": {"type": "string"}},
+        "output_format": {"type": "string", "minLength": 1},
+        "expected_depth": {"type": "string", "enum": ["brief", "standard", "deep"]},
+        "needed_context": {"type": "array", "items": {"type": "string"}},
+    },
+}
+CONSTITUTION_OUTPUT_SCHEMA: Mapping[str, object] = {"type": "object"}
+RETRIEVAL_OUTPUT_SCHEMA: Mapping[str, object] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["task_mission", "evidence", "caveats"],
+    "properties": {
+        "task_mission": {"type": "string", "minLength": 1},
+        "evidence": {"type": "array"},
+        "caveats": {"type": "array", "items": {"type": "string"}},
+    },
+}
+PLAN_OUTPUT_SCHEMA: Mapping[str, object] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["task_mission", "steps", "assumptions", "unresolved_questions", "addressed_constraints"],
+    "properties": {
+        "task_mission": {"type": "string", "minLength": 1},
+        "steps": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "assumptions": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "unresolved_questions": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "addressed_constraints": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    },
+}
+ANSWER_OUTPUT_SCHEMA: Mapping[str, object] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["answer"],
+    "properties": {
+        "answer": {"type": "string", "minLength": 1},
+    },
+}
+CRITIQUE_OUTPUT_SCHEMA: Mapping[str, object] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["task_mission", "strengths", "gaps", "repair_focus", "addressed_constraints"],
+    "properties": {
+        "task_mission": {"type": "string", "minLength": 1},
+        "strengths": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "gaps": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "repair_focus": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "addressed_constraints": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    },
+}
+FINAL_OUTPUT_SCHEMA: Mapping[str, object] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["task_mission", "answer", "source_artifact_id"],
+    "properties": {
+        "task_mission": {"type": "string", "minLength": 1},
+        "answer": {"type": "string", "minLength": 1},
+        "source_artifact_id": {"type": "string", "minLength": 1},
+    },
+}
+MEMORY_CANDIDATE_OUTPUT_SCHEMA: Mapping[str, object] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["task_mission", "emitted", "reason"],
+    "properties": {
+        "task_mission": {"type": "string", "minLength": 1},
+        "emitted": {"type": "boolean"},
+        "reason": {"type": "string", "minLength": 1},
+    },
+}
+
 
 @dataclass(frozen=True)
 class ScorePolicy:
@@ -313,8 +401,8 @@ def build_standard_work_graph(constitution: TaskConstitution | None) -> WorkGrap
 
     admitted_constitution = require_task_constitution(constitution)
     nodes = (
-        _standard_node("canonicalize", "canonicalize", (), ("source_request",), (), 0, "fail_run"),
-        _standard_node("constitute", "constitute", ("canonicalize",), ("canonical_request",), (), 0, "fail_run"),
+        _standard_node("canonicalize", "canonicalize", (), ("source_request",), (), 1, "retry", CANONICALIZE_OUTPUT_SCHEMA),
+        _standard_node("constitute", "constitute", ("canonicalize",), ("canonical_request",), (), 0, "fail_run", CONSTITUTION_OUTPUT_SCHEMA),
         _standard_node(
             "retrieve",
             "retrieve",
@@ -323,10 +411,11 @@ def build_standard_work_graph(constitution: TaskConstitution | None) -> WorkGrap
             tuple(operation for operation in admitted_constitution.allowed_operations if operation != "none"),
             0,
             "continue_with_caveat",
+            RETRIEVAL_OUTPUT_SCHEMA,
         ),
-        _standard_node("plan", "plan", ("constitute", "retrieve"), ("constitution", "retrieved_evidence"), (), 0, "fail_run"),
-        _standard_node("draft", "draft", ("plan",), ("plan",), (), 0, "fail_run"),
-        _standard_node("critique", "critique", ("draft", "constitute"), ("draft", "constitution"), (), 0, "fail_run"),
+        _standard_node("plan", "plan", ("constitute", "retrieve"), ("constitution", "retrieved_evidence"), (), 1, "retry", PLAN_OUTPUT_SCHEMA),
+        _standard_node("draft", "draft", ("plan",), ("plan",), (), 1, "retry", ANSWER_OUTPUT_SCHEMA),
+        _standard_node("critique", "critique", ("draft", "constitute"), ("draft", "constitution"), (), 1, "retry", CRITIQUE_OUTPUT_SCHEMA),
         _standard_node(
             "repair",
             "repair",
@@ -335,8 +424,9 @@ def build_standard_work_graph(constitution: TaskConstitution | None) -> WorkGrap
             (),
             admitted_constitution.limits.max_retries_per_node,
             "retry",
+            ANSWER_OUTPUT_SCHEMA,
         ),
-        _standard_node("verify", "verify", ("repair", "constitute", "retrieve"), ("repaired_draft", "constitution", "retrieved_evidence"), (), 0, "fail_run"),
+        _standard_node("verify", "verify", ("repair", "constitute", "retrieve"), ("repaired_draft", "constitution", "retrieved_evidence"), (), 0, "fail_run", ANSWER_OUTPUT_SCHEMA),
         _standard_node(
             "final",
             "final",
@@ -345,8 +435,9 @@ def build_standard_work_graph(constitution: TaskConstitution | None) -> WorkGrap
             (),
             0,
             "fail_run",
+            FINAL_OUTPUT_SCHEMA,
         ),
-        _standard_node("memory_candidates", "emit_memory_candidate", ("final",), ("final_answer",), (), 0, "continue_with_caveat"),
+        _standard_node("memory_candidates", "emit_memory_candidate", ("final",), ("final_answer",), (), 0, "continue_with_caveat", MEMORY_CANDIDATE_OUTPUT_SCHEMA),
     )
     return form_work_graph(
         admitted_constitution,
@@ -369,13 +460,14 @@ def _standard_node(
     allowed_operations: tuple[str, ...],
     retry_limit: int,
     failure_behavior: str,
+    output_schema: Mapping[str, object],
 ) -> WorkNode:
     return WorkNode(
         node_id=NodeId.from_value(f"node_{name}"),
         kind=kind,
         depends_on=tuple(NodeId.from_value(f"node_{dependency}") for dependency in dependencies),
         input_schema={"type": "object", "required": list(context_scope)},
-        output_schema={"type": "object"},
+        output_schema=output_schema,
         context_scope=context_scope,
         allowed_operations=allowed_operations,
         retry_limit=retry_limit,

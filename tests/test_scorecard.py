@@ -104,6 +104,40 @@ class ScorecardTests(unittest.TestCase):
         self.assertEqual(scorecard.decision, "ask_user")
         self.assertTrue(all(dimension.repair_instruction for dimension in failed_dimensions))
 
+    def test_short_answer_does_not_pass_specificity_from_unrelated_artifact_metadata(self) -> None:
+        scorecard = score_artifact(
+            ScorecardId.from_value("scorecard_short_answer"),
+            _constitution(),
+            _score_input(_node(), output="Useful but short."),
+        )
+
+        specificity = next(dimension for dimension in scorecard.dimensions if dimension.name == "specificity")
+        self.assertEqual(specificity.score, 0.0)
+
+    def test_copied_task_metadata_does_not_make_an_unrelated_answer_relevant(self) -> None:
+        scorecard = score_artifact(
+            ScorecardId.from_value("scorecard_metadata_only"),
+            _constitution(),
+            _score_input(
+                _node(),
+                output="This response gives generic advice without selecting a database option.",
+            ),
+        )
+
+        relevance = next(dimension for dimension in scorecard.dimensions if dimension.name == "relevance")
+        self.assertEqual(relevance.score, 0.0)
+
+    def test_task_echo_does_not_pass_final_usability(self) -> None:
+        output = "Compare database options"
+        scorecard = score_artifact(
+            ScorecardId.from_value("scorecard_task_echo"),
+            _constitution(),
+            _score_input(_node(), output=output),
+        )
+
+        usability = next(dimension for dimension in scorecard.dimensions if dimension.name == "final_usability")
+        self.assertEqual(usability.score, 0.0)
+
     def test_model_critique_cannot_override_controller_aggregate_or_thresholds(self) -> None:
         payload = {
             "overall": 1.0,

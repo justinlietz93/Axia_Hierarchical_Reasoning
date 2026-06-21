@@ -39,6 +39,16 @@ class TaskConstitutionTests(unittest.TestCase):
         self.assertTrue(constitution.stop_conditions)
         self.assertTrue(constitution.quality_rubric)
 
+    def test_brief_mode_reserves_time_for_bounded_cpu_local_retries(self) -> None:
+        brief_request = CanonicalRequest(
+            **{**_canonical_request().to_payload(), "source_request_hash": "request-hash", "expected_depth": "brief"}
+        )
+        constitution = build_task_constitution(brief_request)
+
+        self.assertEqual(constitution.limits.max_model_calls, 6)
+        self.assertEqual(constitution.limits.max_retries_per_node, 1)
+        self.assertEqual(constitution.limits.max_seconds, 180)
+
     def test_constitution_is_immutable_and_revisions_are_explicit(self) -> None:
         initial = build_task_constitution(_canonical_request())
         with self.assertRaises(FrozenInstanceError):

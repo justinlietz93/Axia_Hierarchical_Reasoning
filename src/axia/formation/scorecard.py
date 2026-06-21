@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from dataclasses import dataclass
 from typing import Mapping
@@ -167,12 +168,19 @@ def score_artifact(
             kind="scorecard_validation_node_mismatch",
             message="scorecard validation evidence must belong to the scored node",
         )
-    serialized_artifact = _serialized_artifact(score_input.artifact)
     dimensions = (
-        _dimension("relevance", _mission_is_referenced(serialized_artifact, constitution.mission), "Reference the task mission in the artifact."),
+        _dimension(
+            "relevance",
+            _mission_is_referenced(score_input.rendered_output, constitution.mission),
+            "Reference the task mission in the answer itself.",
+        ),
         _dimension("completeness", score_input.validation.accepted, "Return a schema-valid output with every required field."),
         _dimension("consistency", not score_input.consistency_issues, "Resolve the identified consistency issue."),
-        _dimension("specificity", len(serialized_artifact) >= 48, "Add concrete detail rather than a short generic response."),
+        _dimension(
+            "specificity",
+            len(score_input.rendered_output.strip()) >= 48,
+            "Add concrete detail rather than a short generic response.",
+        ),
         _dimension(
             "evidence_use",
             bool(score_input.evidence_reference_ids) or not constitution.required_evidence,
@@ -183,7 +191,11 @@ def score_artifact(
             set(constitution.constraints).issubset(set(score_input.addressed_constraints)),
             "Address every task constraint explicitly.",
         ),
-        _dimension("final_usability", _is_usable(score_input.rendered_output), "Replace placeholders and provide a usable final form."),
+        _dimension(
+            "final_usability",
+            _is_usable(score_input.rendered_output) and not _echoes_mission(score_input.rendered_output, constitution.mission),
+            "Provide a usable final form rather than echoing the task request.",
+        ),
     )
     overall = _weighted_overall(dimensions, constitution)
     decision = _decision_for(dimensions, score_input.source_node.score_policy)
@@ -272,13 +284,31 @@ def _serialized_artifact(artifact: TypedArtifact | None) -> str:
 
 
 def _mission_is_referenced(serialized_artifact: str, mission: str) -> bool:
-    terms = tuple(term for term in re.findall(r"[a-z0-9]+", mission.lower()) if len(term) > 2)
-    return bool(terms) and any(term in serialized_artifact.lower() for term in terms)
+    terms = {term for term in re.findall(r"[a-z0-9]+", mission.lower()) if len(term) > 2}
+    if not terms:
+        return False
+    answer_terms = set(re.findall(r"[a-z0-9]+", serialized_artifact.lower()))
+    required_overlap = max(1, math.ceil(len(terms) * 0.5))
+    return len(terms & answer_terms) >= required_overlap
 
 
 def _is_usable(rendered_output: str) -> bool:
     lowered = rendered_output.strip().lower()
     return bool(lowered) and not any(marker in lowered for marker in PLACEHOLDER_MARKERS)
+
+
+def _echoes_mission(rendered_output: str, mission: str) -> bool:
+    normalized_output = _normalized_terms(rendered_output)
+    normalized_mission = _normalized_terms(mission)
+    if len(normalized_mission) < 12 or normalized_mission not in normalized_output:
+        return False
+    output_terms = re.findall(r"[a-z0-9]+", rendered_output.lower())
+    mission_terms = re.findall(r"[a-z0-9]+", mission.lower())
+    return len(output_terms) <= len(mission_terms) + 3
+
+
+def _normalized_terms(value: str) -> str:
+    return " ".join(re.findall(r"[a-z0-9]+", value.lower()))
 
 
 def _weighted_overall(dimensions: tuple[ScoreDimension, ...], constitution: TaskConstitution) -> float:
