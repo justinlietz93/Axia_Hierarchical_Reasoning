@@ -80,12 +80,12 @@ ADRs: `ADR-0007`
 
 ADRs: `ADR-0008`
 
-- [x] Step 1.4.1 - Add `axia ask`.
-- [x] Step 1.4.2 - Add `axia run`.
+- [ ] Step 1.4.1 - Add executable `axia ask`.
+- [ ] Step 1.4.2 - Add executable `axia run`.
 - [x] Step 1.4.3 - Add `axia trace`.
 - [x] Step 1.4.4 - Add `axia replay`.
-- [x] Step 1.4.5 - Add `axia profiles list`.
-- [x] Step 1.4.6 - Add `axia benchmark run --suite baseline`.
+- [ ] Step 1.4.5 - Add real `axia profiles list`.
+- [ ] Step 1.4.6 - Add executable `axia benchmark run --suite baseline`.
 - [x] Step 1.4.7 - Do not add `axia memory search`; that belongs to a memory module.
 
 ### Task 1.5 - Implement Local Run Store
@@ -96,6 +96,16 @@ ADRs: `ADR-0008`, `ADR-0006`
 - [x] Step 1.5.2 - Add a SQLite run-store adapter.
 - [x] Step 1.5.3 - Store run manifests, nodes, artifacts, scorecards, errors, context logs, and memory candidates.
 - [x] Step 1.5.4 - Add contract tests proving the run store is trace/replay storage, not durable memory.
+
+### Task 1.6 - Implement The Executable Local Reasoning Path
+
+ADRs: `ADR-0001`, `ADR-0006`, `ADR-0007`, `ADR-0008`
+
+- [ ] Step 1.6.1 - Add a standalone local model-profile loader and a composition root that binds an Axia-native provider to the selected profile.
+- [ ] Step 1.6.2 - Implement a bounded run controller that forms the canonical request, constitution, graph, artifacts, scorecards, final answer, and replayable manifest.
+- [ ] Step 1.6.3 - Replace `axia ask` and `axia run` stubs with real local execution.
+- [ ] Step 1.6.4 - Persist each executable run before exposing it to trace, replay, or the local web UI.
+- [ ] Step 1.6.5 - Run an end-to-end smoke test against an installed tiny Ollama model before claiming the local core path is complete.
 
 ---
 
