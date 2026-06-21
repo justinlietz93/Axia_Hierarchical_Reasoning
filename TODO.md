@@ -315,10 +315,10 @@ ADRs: `ADR-0009`, `ADR-0004`
 
 ADRs: `ADR-0008`, `ADR-0006`
 
-- [ ] Step 8.2.1 - Build local UI only after run manifest and trace views are stable.
-- [ ] Step 8.2.2 - Show run state, completed nodes, scorecards, accepted artifacts, final answer, and memory candidates.
-- [ ] Step 8.2.3 - Keep UI as projection and boundary presentation only.
-- [ ] Step 8.2.4 - Do not let UI shape define internal reasoning contracts.
+- [x] Step 8.2.1 - Build local UI only after run manifest and trace views are stable.
+- [x] Step 8.2.2 - Show run state, completed nodes, scorecards, accepted artifacts, final answer, and memory candidates.
+- [x] Step 8.2.3 - Keep UI as projection and boundary presentation only.
+- [x] Step 8.2.4 - Do not let UI shape define internal reasoning contracts.
 
 ### Task 8.3 - Integrate External Memory Module Through Ports
 

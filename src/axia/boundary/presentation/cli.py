@@ -7,6 +7,7 @@ from typing import Sequence
 
 from axia import __version__
 from axia.boundary.adapters.sqlite_run_store import SQLiteRunStore
+from axia.boundary.presentation.local_web import serve_local_web
 from axia.operation import project_run_trace, replay_run
 from axia.source import RequestRecord
 from axia.shared.ids import RunId
@@ -44,6 +45,11 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_run = benchmark_commands.add_parser("run", help="Run a benchmark suite.")
     benchmark_run.add_argument("--suite", default="baseline")
 
+    web = subcommands.add_parser("web", help="Serve the local read-only run browser.")
+    web.add_argument("--run-store", default=".axia/runs.sqlite3")
+    web.add_argument("--host", default="127.0.0.1")
+    web.add_argument("--port", type=int, default=8765)
+
     return parser
 
 
@@ -65,6 +71,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "benchmark" and args.benchmark_command == "run":
         print(json.dumps({"status": "not_implemented", "suite": args.suite}, sort_keys=True))
         return 0
+    if args.command == "web":
+        return _serve_web(args.run_store, args.host, args.port)
     if args.command == "replay":
         return _replay_run(args.run_id, args.run_store)
     if args.command == "trace":
@@ -106,4 +114,15 @@ def _trace_run(run_id_value: str, run_store_path: str, output_format: str) -> in
         print(trace.render_text())
     else:
         print(json.dumps(trace.to_payload(), sort_keys=True))
+    return 0
+
+
+def _serve_web(run_store_path: str, host: str, port: int) -> int:
+    store = SQLiteRunStore(Path(run_store_path))
+    try:
+        serve_local_web(store, host, port)
+    except KeyboardInterrupt:
+        return 0
+    finally:
+        store.close()
     return 0

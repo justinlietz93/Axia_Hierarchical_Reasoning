@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import sqlite3
+from threading import RLock
 
 from axia.boundary.ports.run_store import (
     RunManifestRecord,
     RunStoreFailure,
     RunTraceRecord,
     StoredRun,
+    StoredRunSummary,
     StoredRunTraceRecord,
 )
 from axia.shared.ids import RunId
@@ -21,17 +23,19 @@ class SQLiteRunStore:
         self._database = str(database)
         if self._database != ":memory:":
             Path(self._database).parent.mkdir(parents=True, exist_ok=True)
+        self._lock = RLock()
         self._connection = self._open_connection()
         self._initialize()
 
     def close(self) -> None:
         """Release the local SQLite connection when the composition root is done."""
 
-        self._connection.close()
+        with self._lock:
+            self._connection.close()
 
     def create_run(self, manifest: RunManifestRecord) -> None:
         manifest_json = _encode_json(manifest.payload, "run_manifest_not_serializable")
-        with self._connection as connection:
+        with self._lock, self._connection as connection:
             try:
                 connection.execute(
                     """
@@ -55,7 +59,7 @@ class SQLiteRunStore:
 
     def append(self, record: RunTraceRecord) -> StoredRunTraceRecord:
         payload_json = _encode_json(record.payload, "run_trace_not_serializable")
-        with self._connection as connection:
+        with self._lock, self._connection as connection:
             try:
                 connection.execute("BEGIN IMMEDIATE")
                 exists = connection.execute(
@@ -99,7 +103,7 @@ class SQLiteRunStore:
         )
 
     def read_run(self, run_id: RunId) -> StoredRun:
-        with self._connection as connection:
+        with self._lock, self._connection as connection:
             manifest_row = connection.execute(
                 """
                 SELECT created_at, status, mode, request_hash, manifest_json
@@ -141,8 +145,24 @@ class SQLiteRunStore:
         )
         return StoredRun(manifest=manifest, records=records)
 
+    def list_runs(self) -> tuple[StoredRunSummary, ...]:
+        with self._lock, self._connection as connection:
+            rows = connection.execute(
+                "SELECT run_id, created_at, status, mode, request_hash FROM runs ORDER BY created_at DESC, run_id DESC"
+            ).fetchall()
+        return tuple(
+            StoredRunSummary(
+                run_id=RunId.from_value(row[0]),
+                created_at=row[1],
+                status=row[2],
+                mode=row[3],
+                request_hash=row[4],
+            )
+            for row in rows
+        )
+
     def _initialize(self) -> None:
-        with self._connection as connection:
+        with self._lock, self._connection as connection:
             connection.executescript(
                 """
                 CREATE TABLE IF NOT EXISTS runs (
@@ -168,7 +188,7 @@ class SQLiteRunStore:
             )
 
     def _open_connection(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self._database)
+        connection = sqlite3.connect(self._database, check_same_thread=False)
         connection.execute("PRAGMA foreign_keys = ON")
         return connection
 

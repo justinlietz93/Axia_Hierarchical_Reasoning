@@ -13,6 +13,7 @@ from axia.projection.run_manifest import (
 )
 from axia.projection.replay import ReplayFailure, ReplayNodeDecision, ReplayResult, replay_manifest_payload
 from axia.projection.trace_view import TRACE_VIEW_SCHEMA, TraceRecord, TraceView, TraceViewFailure, project_trace_view
+from axia.projection.web_run import project_web_run
 
 __all__ = [
     "MANIFEST_MODES",
@@ -33,4 +34,5 @@ __all__ = [
     "TraceView",
     "TraceViewFailure",
     "project_trace_view",
+    "project_web_run",
 ]

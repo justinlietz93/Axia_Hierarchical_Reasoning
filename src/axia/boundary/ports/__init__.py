@@ -22,6 +22,7 @@ from axia.boundary.ports.run_store import (
     RunStoreFailure,
     RunTraceRecord,
     StoredRun,
+    StoredRunSummary,
     StoredRunTraceRecord,
 )
 
@@ -43,5 +44,6 @@ __all__ = [
     "RunStoreFailure",
     "RunTraceRecord",
     "StoredRun",
+    "StoredRunSummary",
     "StoredRunTraceRecord",
 ]

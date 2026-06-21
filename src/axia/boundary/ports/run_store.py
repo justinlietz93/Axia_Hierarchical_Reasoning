@@ -62,6 +62,17 @@ class StoredRun:
 
 
 @dataclass(frozen=True)
+class StoredRunSummary:
+    """The small local index record needed to browse stored reasoning runs."""
+
+    run_id: RunId
+    created_at: str
+    status: str
+    mode: str
+    request_hash: str
+
+
+@dataclass(frozen=True)
 class RunStoreFailure(AxiaError):
     """A stable run-store failure suitable for trace and caller handling."""
 
@@ -77,3 +88,6 @@ class RunStore(Protocol):
 
     def read_run(self, run_id: RunId) -> StoredRun:
         """Load one run and its evidence in the recorded order."""
+
+    def list_runs(self) -> tuple[StoredRunSummary, ...]:
+        """List local run envelopes without exposing their stored contents."""

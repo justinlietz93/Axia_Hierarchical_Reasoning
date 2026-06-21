@@ -1296,6 +1296,8 @@ The run page must show:
 - final answer;
 - memory candidates.
 
+The initial local UI is available through `axia web`. It is a read-only browser over locally stored run summaries and safe run-detail projections. It does not create runs, own model providers, expose raw provider responses, search durable memory, or change reasoning contracts.
+
 ### 20.3 Trace Display
 
 The trace must be readable as:
