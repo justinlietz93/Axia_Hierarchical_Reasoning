@@ -342,12 +342,12 @@ ADRs: `ADR-0001`, `ADR-0006`, `ADR-0009`
 
 ## ADR Coverage Checklist
 
-- [ ] `ADR-0001` - Reasoning orchestration boundary is enforced.
-- [ ] `ADR-0002` - Run-local context and durable memory are separated.
-- [ ] `ADR-0003` - Canonical request and task constitution are implemented before planning.
-- [ ] `ADR-0004` - Work graph and micro-agent contracts are bounded and typed.
-- [ ] `ADR-0005` - Validation, scoring, and bounded repair gate artifact acceptance.
-- [ ] `ADR-0006` - Final synthesis, trace, and replay are artifact-grounded.
-- [ ] `ADR-0007` - Provider boundary and deterministic fake provider are tested.
-- [ ] `ADR-0008` - Local-first CLI and run store prove the core path.
-- [ ] `ADR-0009` - Reasoning improvement is benchmarked against single-shot baseline.
+- [x] `ADR-0001` - Reasoning orchestration boundary is enforced.
+- [x] `ADR-0002` - Run-local context and durable memory are separated.
+- [x] `ADR-0003` - Canonical request and task constitution are implemented before planning.
+- [x] `ADR-0004` - Work graph and micro-agent contracts are bounded and typed.
+- [x] `ADR-0005` - Validation, scoring, and bounded repair gate artifact acceptance.
+- [x] `ADR-0006` - Final synthesis, trace, and replay are artifact-grounded.
+- [x] `ADR-0007` - Provider boundary and deterministic fake provider are tested.
+- [x] `ADR-0008` - Local-first CLI and run store prove the core path.
+- [x] `ADR-0009` - Reasoning improvement is benchmarked against single-shot baseline.
