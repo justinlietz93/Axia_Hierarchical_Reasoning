@@ -1722,6 +1722,8 @@ For each task, compare:
 
 Score with the same rubric.
 
+The fixed `baseline_v1` suite contains 20 named tasks. Each report records the complete task input, one output and run ID per mode, any mode-provided scorecard, and per-mode summary metrics. Quick and standard benchmark runners are explicit adapters over an injected Axia execution path; the harness does not claim their output is orchestrated until that path is supplied.
+
 Pass condition:
 
 ```text

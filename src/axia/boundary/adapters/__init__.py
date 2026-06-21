@@ -1,5 +1,9 @@
 """Concrete boundary adapters."""
 
+from axia.boundary.adapters.json_benchmark_report_store import JsonBenchmarkReportStore
+
+__all__ = ["JsonBenchmarkReportStore"]
+
 from axia.boundary.adapters.crux_provider import (
     CruxImportSurface,
     CruxProviderAdapter,

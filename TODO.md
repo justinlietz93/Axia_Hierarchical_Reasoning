@@ -270,11 +270,11 @@ ADRs: `ADR-0006`, `ADR-0008`
 
 ADRs: `ADR-0009`
 
-- [ ] Step 7.1.1 - Create a fixed benchmark suite of at least 20 tasks.
-- [ ] Step 7.1.2 - Add single-shot tiny model runner.
-- [ ] Step 7.1.3 - Add Axia quick-mode runner.
-- [ ] Step 7.1.4 - Add Axia standard-mode runner.
-- [ ] Step 7.1.5 - Store benchmark inputs, outputs, scorecards, run IDs, and summary metrics.
+- [x] Step 7.1.1 - Create a fixed benchmark suite of at least 20 tasks.
+- [x] Step 7.1.2 - Add single-shot tiny model runner.
+- [x] Step 7.1.3 - Add Axia quick-mode runner.
+- [x] Step 7.1.4 - Add Axia standard-mode runner.
+- [x] Step 7.1.5 - Store benchmark inputs, outputs, scorecards, run IDs, and summary metrics.
 
 ### Task 7.2 - Score Reasoning Improvement
 

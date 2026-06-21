@@ -1,5 +1,6 @@
 """Boundary port definitions."""
 
+from axia.boundary.ports.benchmark_report_store import BenchmarkReportStore
 from axia.boundary.ports.context_provider import (
     ContextProvider,
     ContextProviderFailure,
@@ -25,6 +26,7 @@ from axia.boundary.ports.run_store import (
 )
 
 __all__ = [
+    "BenchmarkReportStore",
     "ContextProvider",
     "ContextProviderFailure",
     "ContextQuery",
