@@ -7,7 +7,7 @@ from typing import Sequence
 
 from axia import __version__
 from axia.boundary.adapters.sqlite_run_store import SQLiteRunStore
-from axia.operation import replay_run
+from axia.operation import project_run_trace, replay_run
 from axia.source import RequestRecord
 from axia.shared.ids import RunId
 
@@ -28,6 +28,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     trace = subcommands.add_parser("trace", help="Show a run trace.")
     trace.add_argument("run_id")
+    trace.add_argument("--run-store", default=".axia/runs.sqlite3")
+    trace.add_argument("--format", choices=["json", "text"], default="json")
 
     replay = subcommands.add_parser("replay", help="Replay a run from stored artifacts.")
     replay.add_argument("run_id")
@@ -66,8 +68,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "replay":
         return _replay_run(args.run_id, args.run_store)
     if args.command == "trace":
-        print(json.dumps({"status": "not_implemented", "run_id": args.run_id}, sort_keys=True))
-        return 0
+        return _trace_run(args.run_id, args.run_store, args.format)
 
     parser.print_help()
     return 0
@@ -92,4 +93,17 @@ def _replay_run(run_id_value: str, run_store_path: str) -> int:
     finally:
         store.close()
     print(json.dumps(replay.to_payload(), sort_keys=True))
+    return 0
+
+
+def _trace_run(run_id_value: str, run_store_path: str, output_format: str) -> int:
+    store = SQLiteRunStore(Path(run_store_path))
+    try:
+        trace = project_run_trace(RunId.from_value(run_id_value), store)
+    finally:
+        store.close()
+    if output_format == "text":
+        print(trace.render_text())
+    else:
+        print(json.dumps(trace.to_payload(), sort_keys=True))
     return 0

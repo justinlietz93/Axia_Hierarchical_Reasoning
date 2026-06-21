@@ -257,10 +257,10 @@ ADRs: `ADR-0006`
 
 ADRs: `ADR-0006`, `ADR-0008`
 
-- [ ] Step 6.4.1 - Add CLI support for `axia trace RUN_ID`.
-- [ ] Step 6.4.2 - Display request interpretation, task contract, scoped context records, draft score, repair summary, verification result, and final acceptance.
-- [ ] Step 6.4.3 - Do not expose hidden chain-of-thought as the product truth.
-- [ ] Step 6.4.4 - Include machine-readable trace output for tests and tooling.
+- [x] Step 6.4.1 - Add CLI support for `axia trace RUN_ID`.
+- [x] Step 6.4.2 - Display request interpretation, task contract, scoped context records, draft score, repair summary, verification result, and final acceptance.
+- [x] Step 6.4.3 - Do not expose hidden chain-of-thought as the product truth.
+- [x] Step 6.4.4 - Include machine-readable trace output for tests and tooling.
 
 ---
 

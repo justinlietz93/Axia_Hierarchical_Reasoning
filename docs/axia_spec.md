@@ -1274,6 +1274,8 @@ axia profiles list
 axia profiles create
 ```
 
+`axia trace RUN_ID` emits a versioned machine-readable trace by default. `--format text` renders the same projection for terminal inspection. Both forms expose artifact-level evidence and context references only; neither form exposes raw provider prose or context content.
+
 ### 20.2 Local Web UI
 
 Pages:

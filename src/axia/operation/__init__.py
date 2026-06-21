@@ -13,6 +13,7 @@ from axia.operation.repair_context_packer import pack_repair_context
 from axia.operation.run_replay import replay_run
 from axia.operation.run_manifest_recorder import record_run_manifest
 from axia.operation.scorecard_recorder import record_scorecard
+from axia.operation.trace_projection import project_run_trace
 from axia.operation.micro_agent_executor import (
     MicroAgentResult,
     compile_micro_agent_request,
@@ -33,6 +34,7 @@ __all__ = [
     "replay_run",
     "record_run_manifest",
     "record_scorecard",
+    "project_run_trace",
     "MicroAgentResult",
     "compile_micro_agent_request",
     "execute_micro_agent",
