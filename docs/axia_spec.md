@@ -1724,6 +1724,8 @@ Score with the same rubric.
 
 The fixed `baseline_v1` suite contains 20 named tasks. Each report records the complete task input, one output and run ID per mode, any mode-provided scorecard, and per-mode summary metrics. Quick and standard benchmark runners are explicit adapters over an injected Axia execution path; the harness does not claim their output is orchestrated until that path is supplied.
 
+Benchmark reports preserve two distinct scorecard kinds. A mode-provided run scorecard evaluates an artifact within that run. A benchmark comparison scorecard evaluates the final answer and trace-backed controls across modes: final-answer usefulness, decomposition coverage, schema validity, constraint coverage, claim-to-evidence support, repair effectiveness, and replayability. The default final-answer evaluator is a deterministic lexical lower bound, not a claim of semantic correctness; every scored report records the evaluator identity and parameters, and a comparative run must retain the same configuration for every mode. A repair criterion with no recorded repair attempt is explicitly unassessed, never counted as a successful repair.
+
 Pass condition:
 
 ```text

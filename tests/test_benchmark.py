@@ -65,8 +65,10 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(len(report.records), len(BASELINE_BENCHMARK_SUITE.tasks) * 3)
         self.assertEqual(payload["summary_metrics"]["single_shot"]["run_count"], len(BASELINE_BENCHMARK_SUITE.tasks))
         self.assertEqual(payload["summary_metrics"]["quick"]["scored_output_count"], len(BASELINE_BENCHMARK_SUITE.tasks))
+        self.assertEqual(payload["summary_metrics"]["standard"]["benchmark_scorecard_count"], len(BASELINE_BENCHMARK_SUITE.tasks))
         self.assertEqual(payload["records"][0]["input"]["task_id"], "database_choice")
         self.assertIn("run_id", payload["records"][0]["execution"])
+        self.assertIsNotNone(payload["records"][0]["execution"]["benchmark_scorecard"])
 
         with TemporaryDirectory() as temporary_directory:
             destination = JsonBenchmarkReportStore(temporary_directory).write(report)

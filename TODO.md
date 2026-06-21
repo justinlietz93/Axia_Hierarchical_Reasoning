@@ -280,13 +280,13 @@ ADRs: `ADR-0009`
 
 ADRs: `ADR-0009`, `ADR-0005`
 
-- [ ] Step 7.2.1 - Score final answer usefulness.
-- [ ] Step 7.2.2 - Score task decomposition quality.
-- [ ] Step 7.2.3 - Score schema validity.
-- [ ] Step 7.2.4 - Score constraint compliance.
-- [ ] Step 7.2.5 - Score evidence use and support.
-- [ ] Step 7.2.6 - Score repair effectiveness.
-- [ ] Step 7.2.7 - Score replayability.
+- [x] Step 7.2.1 - Score final answer usefulness.
+- [x] Step 7.2.2 - Score task decomposition quality.
+- [x] Step 7.2.3 - Score schema validity.
+- [x] Step 7.2.4 - Score constraint compliance.
+- [x] Step 7.2.5 - Score evidence use and support.
+- [x] Step 7.2.6 - Score repair effectiveness.
+- [x] Step 7.2.7 - Score replayability.
 
 ### Task 7.3 - Define MVP Improvement Gate
 

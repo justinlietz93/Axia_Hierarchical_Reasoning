@@ -5,6 +5,7 @@ from typing import Mapping
 
 from axia.benchmark.report import BenchmarkRecord, BenchmarkReport
 from axia.benchmark.runner import BENCHMARK_MODES, BenchmarkRunner
+from axia.benchmark.scoring import BenchmarkScorer, score_benchmark_report
 from axia.benchmark.suite import BenchmarkSuite
 from axia.shared.errors import AxiaError
 
@@ -14,8 +15,13 @@ class BenchmarkFailure(AxiaError):
     """A deterministic failure while forming a complete three-mode benchmark report."""
 
 
-def run_benchmark_suite(suite: BenchmarkSuite, runners: Mapping[str, BenchmarkRunner]) -> BenchmarkReport:
-    """Run every fixed task once per declared mode and preserve the full comparison evidence."""
+def run_benchmark_suite(
+    suite: BenchmarkSuite,
+    runners: Mapping[str, BenchmarkRunner],
+    *,
+    scorer: BenchmarkScorer | None = None,
+) -> BenchmarkReport:
+    """Run and score every fixed task once per declared mode under one comparison rubric."""
 
     if set(runners) != set(BENCHMARK_MODES):
         raise BenchmarkFailure(
@@ -38,4 +44,4 @@ def run_benchmark_suite(suite: BenchmarkSuite, runners: Mapping[str, BenchmarkRu
                     message="benchmark execution must preserve its requested task and mode",
                 )
             records.append(BenchmarkRecord(task=task, execution=execution))
-    return BenchmarkReport(suite=suite, records=tuple(records))
+    return score_benchmark_report(BenchmarkReport(suite=suite, records=tuple(records)), scorer)
