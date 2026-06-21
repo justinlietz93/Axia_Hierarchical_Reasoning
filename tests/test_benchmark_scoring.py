@@ -7,6 +7,7 @@ from axia.benchmark import (
     BASELINE_BENCHMARK_SUITE,
     BENCHMARK_SCORE_DIMENSIONS,
     BenchmarkControlEvidence,
+    CandidateTrial,
     compare_mvp_improvement,
     BenchmarkDecompositionStep,
     BenchmarkEvidenceSupport,
@@ -20,6 +21,8 @@ from axia.benchmark import (
     BenchmarkSuite,
     BenchmarkTask,
     LexicalAnswerUsefulnessEvaluator,
+    StrategyCandidate,
+    evaluate_strategy_admission,
     score_benchmark_report,
 )
 from axia.shared.ids import RunId
@@ -178,6 +181,32 @@ class BenchmarkScoringTests(unittest.TestCase):
 
     def test_baseline_suite_stays_available_for_scored_comparisons(self) -> None:
         self.assertGreaterEqual(len(BASELINE_BENCHMARK_SUITE.tasks), 20)
+
+    def test_advanced_strategy_requires_bounded_inspectable_gain_over_standard(self) -> None:
+        standard = _scorer().score_execution(_task(), _execution("standard")).benchmark_scorecard
+        candidate = _scorer().score_execution(_task(), _execution("quick", controls=_controls())).benchmark_scorecard
+        assert standard is not None and candidate is not None
+        candidate = type(candidate)(
+            scorecard_id=candidate.scorecard_id,
+            task_id=candidate.task_id,
+            mode="candidate:self_consistency",
+            source_run_id=candidate.source_run_id,
+            dimensions=candidate.dimensions,
+            overall=candidate.overall,
+        )
+        strategy = StrategyCandidate("self_consistency", 3, 3, ("candidate_outputs", "selection_record"))
+        admitted = evaluate_strategy_admission(
+            strategy,
+            (CandidateTrial("scored_reasoning", standard, candidate, 3, ("candidate_outputs", "selection_record")),),
+        )
+        rejected = evaluate_strategy_admission(
+            strategy,
+            (CandidateTrial("scored_reasoning", standard, candidate, 4, ("candidate_outputs",)),),
+        )
+        self.assertTrue(admitted.admitted)
+        self.assertFalse(rejected.admitted)
+        self.assertIn("call_budget_exceeded", rejected.rejection_reasons)
+        self.assertIn("required_artifacts_missing", rejected.rejection_reasons)
 
 
 if __name__ == "__main__":

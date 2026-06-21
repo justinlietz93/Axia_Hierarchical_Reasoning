@@ -305,11 +305,11 @@ ADRs: `ADR-0009`
 
 ADRs: `ADR-0009`, `ADR-0004`
 
-- [ ] Step 8.1.1 - Treat self-consistency as a candidate strategy, not a default.
-- [ ] Step 8.1.2 - Treat verifier-guided selection as a candidate strategy, not a default.
-- [ ] Step 8.1.3 - Treat branch search and multi-branch synthesis as candidate strategies, not defaults.
-- [ ] Step 8.1.4 - Require bounded call budgets and inspectable artifacts for each candidate.
-- [ ] Step 8.1.5 - Compare each candidate against standard graph before admission.
+- [x] Step 8.1.1 - Treat self-consistency as a candidate strategy, not a default.
+- [x] Step 8.1.2 - Treat verifier-guided selection as a candidate strategy, not a default.
+- [x] Step 8.1.3 - Treat branch search and multi-branch synthesis as candidate strategies, not defaults.
+- [x] Step 8.1.4 - Require bounded call budgets and inspectable artifacts for each candidate.
+- [x] Step 8.1.5 - Compare each candidate against standard graph before admission.
 
 ### Task 8.2 - Add Local Web UI After CLI Trace Stabilizes
 
