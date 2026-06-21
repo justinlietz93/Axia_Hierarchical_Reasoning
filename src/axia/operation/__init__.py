@@ -9,6 +9,7 @@ from axia.operation.final_synthesis import (
     parse_final_synthesis_response,
 )
 from axia.operation.memory_candidate_emitter import emit_memory_candidate
+from axia.operation.export_candidate_emitter import emit_export_candidates, form_export_candidates
 from axia.operation.repair_context_packer import pack_repair_context
 from axia.operation.run_replay import replay_run
 from axia.operation.run_manifest_recorder import record_run_manifest
@@ -30,6 +31,8 @@ __all__ = [
     "form_final_synthesis_context",
     "parse_final_synthesis_response",
     "emit_memory_candidate",
+    "emit_export_candidates",
+    "form_export_candidates",
     "pack_repair_context",
     "replay_run",
     "record_run_manifest",

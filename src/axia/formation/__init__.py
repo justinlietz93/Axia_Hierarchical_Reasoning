@@ -48,6 +48,7 @@ from axia.formation.memory_candidate import (
     MemoryCandidate,
     MemoryCandidateFailure,
 )
+from axia.formation.export_candidate import ExportCandidate
 from axia.formation.scorecard import (
     SCORECARD_SCHEMA,
     SCORE_DECISIONS,
@@ -129,6 +130,7 @@ __all__ = [
     "MEMORY_CANDIDATE_TYPES",
     "MemoryCandidate",
     "MemoryCandidateFailure",
+    "ExportCandidate",
     "SCORECARD_SCHEMA",
     "SCORE_DECISIONS",
     "SCORE_DIMENSIONS",

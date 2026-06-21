@@ -333,10 +333,10 @@ ADRs: `ADR-0002`, `ADR-0001`
 
 ADRs: `ADR-0001`, `ADR-0006`, `ADR-0009`
 
-- [ ] Step 8.4.1 - Emit reasoning example candidates from accepted traces.
-- [ ] Step 8.4.2 - Emit training slice candidates from useful interaction segments.
-- [ ] Step 8.4.3 - Keep export, dataset governance, and training outside Axia.
-- [ ] Step 8.4.4 - Require explicit user approval before any external export.
+- [x] Step 8.4.1 - Emit reasoning example candidates from accepted traces.
+- [x] Step 8.4.2 - Emit training slice candidates from useful interaction segments.
+- [x] Step 8.4.3 - Keep export, dataset governance, and training outside Axia.
+- [x] Step 8.4.4 - Require explicit user approval before any external export.
 
 ---
 
