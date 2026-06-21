@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Mapping
 
 from axia.formation.canonical_request import CanonicalRequest
+from axia.formation.final_answer import FinalAnswer
 from axia.formation.memory_candidate import MemoryCandidate
 from axia.formation.micro_agent import TypedArtifact
 from axia.formation.scorecard import Scorecard
@@ -201,7 +202,7 @@ class RunManifest:
     constitution: TaskConstitution
     work_graph: WorkGraph
     node_results: tuple[RunManifestNodeResult, ...]
-    final_answer: str | None
+    final_answer: FinalAnswer | str | None
     memory_candidates: tuple[MemoryCandidate, ...]
     metrics: Mapping[str, object]
     schema_version: int = 1
@@ -283,16 +284,33 @@ class RunManifest:
                     kind="run_manifest_memory_candidate_artifact_mismatch",
                     message="memory candidates must cite artifacts present in the manifest",
                 )
-        if self.status == "complete" and (self.final_answer is None or not self.final_answer.strip()):
+        rendered_final_answer = _render_final_answer(self.final_answer)
+        if self.status == "complete" and not rendered_final_answer:
             raise RunManifestFailure(
                 kind="run_manifest_final_answer_missing",
                 message="a complete run requires a non-empty final answer",
             )
-        if self.final_answer is not None and not self.final_answer.strip():
+        if self.final_answer is not None and not rendered_final_answer:
             raise RunManifestFailure(
                 kind="run_manifest_final_answer_invalid",
                 message="final answers must be non-empty when present",
             )
+        if isinstance(self.final_answer, FinalAnswer):
+            if self.final_answer.source_run_id != self.run_id:
+                raise RunManifestFailure(
+                    kind="run_manifest_final_answer_lineage_mismatch",
+                    message="structured final answers must originate from the manifest run",
+                )
+            accepted_artifact_ids = {
+                result.artifact_id
+                for result in self.node_results
+                if result.status in {"accepted", "repaired"} and result.artifact_id is not None
+            }
+            if not {claim.source_artifact_id for claim in self.final_answer.claims}.issubset(accepted_artifact_ids):
+                raise RunManifestFailure(
+                    kind="run_manifest_final_answer_artifact_mismatch",
+                    message="structured final answers must cite accepted manifest artifacts",
+                )
         try:
             stable_json_hash(self.metrics)
         except (TypeError, ValueError) as error:
@@ -316,7 +334,7 @@ class RunManifest:
             "constitution": self.constitution.to_payload(),
             "work_graph": self.work_graph.to_payload(),
             "node_results": [result.to_payload() for result in self.node_results],
-            "final_answer": self.final_answer,
+            "final_answer": self.final_answer.to_payload() if isinstance(self.final_answer, FinalAnswer) else self.final_answer,
             "memory_candidates": [candidate.to_payload() for candidate in self.memory_candidates],
             "metrics": dict(self.metrics),
         }
@@ -358,3 +376,16 @@ def _require_timestamp(value: str, kind: str) -> None:
         datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as error:
         raise RunManifestFailure(kind=kind, message="timestamps must be ISO-8601 values") from error
+
+
+def _render_final_answer(final_answer: FinalAnswer | str | None) -> str | None:
+    if final_answer is None:
+        return None
+    if isinstance(final_answer, FinalAnswer):
+        return final_answer.render().strip()
+    if isinstance(final_answer, str):
+        return final_answer.strip()
+    raise RunManifestFailure(
+        kind="run_manifest_final_answer_invalid",
+        message="final answers must be strings or trace-grounded final-answer records",
+    )

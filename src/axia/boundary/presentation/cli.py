@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 from typing import Sequence
 
 from axia import __version__
+from axia.boundary.adapters.sqlite_run_store import SQLiteRunStore
+from axia.operation import replay_run
 from axia.source import RequestRecord
+from axia.shared.ids import RunId
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -27,6 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     replay = subcommands.add_parser("replay", help="Replay a run from stored artifacts.")
     replay.add_argument("run_id")
+    replay.add_argument("--run-store", default=".axia/runs.sqlite3")
 
     profiles = subcommands.add_parser("profiles", help="Inspect model profiles.")
     profile_commands = profiles.add_subparsers(dest="profile_command")
@@ -58,7 +63,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "benchmark" and args.benchmark_command == "run":
         print(json.dumps({"status": "not_implemented", "suite": args.suite}, sort_keys=True))
         return 0
-    if args.command in {"trace", "replay"}:
+    if args.command == "replay":
+        return _replay_run(args.run_id, args.run_store)
+    if args.command == "trace":
         print(json.dumps({"status": "not_implemented", "run_id": args.run_id}, sort_keys=True))
         return 0
 
@@ -77,3 +84,12 @@ def _print_request_stub(kind: str, request_text: str, **extra: str) -> int:
     print(json.dumps(payload, sort_keys=True))
     return 0
 
+
+def _replay_run(run_id_value: str, run_store_path: str) -> int:
+    store = SQLiteRunStore(Path(run_store_path))
+    try:
+        replay = replay_run(RunId.from_value(run_id_value), store)
+    finally:
+        store.close()
+    print(json.dumps(replay.to_payload(), sort_keys=True))
+    return 0

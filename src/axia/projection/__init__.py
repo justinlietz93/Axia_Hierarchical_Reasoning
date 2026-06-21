@@ -11,6 +11,7 @@ from axia.projection.run_manifest import (
     RunManifestNodeResult,
     prompt_hash_key,
 )
+from axia.projection.replay import ReplayFailure, ReplayNodeDecision, ReplayResult, replay_manifest_payload
 
 __all__ = [
     "MANIFEST_MODES",
@@ -22,4 +23,8 @@ __all__ = [
     "RunManifestFailure",
     "RunManifestNodeResult",
     "prompt_hash_key",
+    "ReplayFailure",
+    "ReplayNodeDecision",
+    "ReplayResult",
+    "replay_manifest_payload",
 ]

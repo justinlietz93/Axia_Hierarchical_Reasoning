@@ -135,7 +135,7 @@ def _validate_object(
     path: str,
     errors: list[ValidationIssue],
 ) -> None:
-    required_fields = schema.get("required", ())
+    required_fields = schema.get("required", [])
     if not isinstance(required_fields, list):
         errors.append(ValidationIssue(path=path, rule="schema", message="required must be a list"))
         required_fields = ()

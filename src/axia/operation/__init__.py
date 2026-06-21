@@ -10,6 +10,7 @@ from axia.operation.final_synthesis import (
 )
 from axia.operation.memory_candidate_emitter import emit_memory_candidate
 from axia.operation.repair_context_packer import pack_repair_context
+from axia.operation.run_replay import replay_run
 from axia.operation.run_manifest_recorder import record_run_manifest
 from axia.operation.scorecard_recorder import record_scorecard
 from axia.operation.micro_agent_executor import (
@@ -29,6 +30,7 @@ __all__ = [
     "parse_final_synthesis_response",
     "emit_memory_candidate",
     "pack_repair_context",
+    "replay_run",
     "record_run_manifest",
     "record_scorecard",
     "MicroAgentResult",

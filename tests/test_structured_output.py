@@ -24,6 +24,18 @@ class StructuredOutputTests(unittest.TestCase):
         self.assertEqual(result.payload, {"status": "ok", "count": 1})
         self.assertEqual(result.validation_errors, ())
 
+    def test_accepts_unconstrained_object_properties(self) -> None:
+        result = parse_and_validate_json_object(
+            '{"metadata":{"provider":"fake"}}',
+            {
+                "type": "object",
+                "required": ["metadata"],
+                "properties": {"metadata": {"type": "object"}},
+            },
+        )
+
+        self.assertTrue(result.accepted)
+
     def test_preserves_parse_missing_field_and_wrong_type_errors(self) -> None:
         cases = (
             ("{", "json_parse", "$"),

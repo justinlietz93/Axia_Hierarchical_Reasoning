@@ -788,7 +788,7 @@ Every prompt must be built from canonical JSON serialization:
   "constitution": {},
   "work_graph": {},
   "node_results": [],
-  "final_answer": "string",
+  "final_answer": "string or structured final-answer projection",
   "memory_candidates": [],
   "metrics": {}
 }

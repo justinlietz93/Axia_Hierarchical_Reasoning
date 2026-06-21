@@ -247,11 +247,11 @@ ADRs: `ADR-0006`, `ADR-0005`
 
 ADRs: `ADR-0006`
 
-- [ ] Step 6.3.1 - Replay graph traversal from saved manifest and saved node outputs.
-- [ ] Step 6.3.2 - Reproduce validation decisions and score comparisons from saved artifacts.
-- [ ] Step 6.3.3 - Reproduce final selected artifact.
-- [ ] Step 6.3.4 - Add CLI support for `axia replay RUN_ID`.
-- [ ] Step 6.3.5 - Add tests proving prompt hashes and graph order remain stable.
+- [x] Step 6.3.1 - Replay graph traversal from saved manifest and saved node outputs.
+- [x] Step 6.3.2 - Reproduce validation decisions and score comparisons from saved artifacts.
+- [x] Step 6.3.3 - Reproduce final selected artifact.
+- [x] Step 6.3.4 - Add CLI support for `axia replay RUN_ID`.
+- [x] Step 6.3.5 - Add tests proving prompt hashes and graph order remain stable.
 
 ### Task 6.4 - Implement Trace Display
 
