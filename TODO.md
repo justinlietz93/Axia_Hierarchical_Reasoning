@@ -350,6 +350,25 @@ ADRs: `ADR-0001`, `ADR-0006`, `ADR-0009`
 
 ---
 
+## Phase 9 - Completion Integrity
+
+### Task 9.1 - Resolve Or Isolate SGDA Scaffold Placeholders
+
+Source: `docs/scaffold_sgda_docs.py`
+
+- [ ] Step 9.1.1 - Decide whether the SGDA documentation scaffold is an active Axia tool or an archived external reference.
+- [ ] Step 9.1.2 - If retained, replace its emitted `TODO` and placeholder material with Axia-specific, verified documentation behavior.
+- [ ] Step 9.1.3 - If not retained, move it outside the active documentation surface and remove it from Axia completion claims.
+
+### Task 9.2 - Reconcile Public Status With Executable Reality
+
+Source: `README.md`, `src/axia/boundary/presentation/cli.py`
+
+- [ ] Step 9.2.1 - Update the README status once the executable local reasoning path exists; until then, distinguish tested components from runnable product behavior.
+- [ ] Step 9.2.2 - Remove every `not_implemented` response from user-facing CLI commands only when its real execution path and end-to-end test exist.
+
+---
+
 ## ADR Coverage Checklist
 
 - [x] `ADR-0001` - Reasoning orchestration boundary is enforced.
