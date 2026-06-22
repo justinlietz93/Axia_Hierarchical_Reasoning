@@ -1,7 +1,7 @@
 # Axia Specification
 
 **Project name:** Axia  
-**Target runtime:** Provider-agnostic, local-first model execution through `crux-providers`; default profile routes to local Ollama-compatible small models  
+**Target runtime:** Provider-agnostic, local-first model execution through an Axia-native provider port; optional `crux-providers` adapter for the standalone local profile; default profile routes to local Ollama-compatible small models  
 **Spec version:** 0.6  
 **Primary objective:** Make tiny local models produce substantially better user-facing results by surrounding them with deterministic reasoning decomposition, scoped context assembly, validation, retry, critique, scoring, and synthesis loops.  
 **Architecture pattern:** Tiny recursive orchestration. Use **Axia** as the product name, package name, and CLI name.
@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-Axia is a local-first application that turns a tiny provider-backed model into a structured worker inside a deterministic orchestration system. The default runtime profile is local Ollama through `crux-providers`, but the controller is provider-agnostic from the first build.
+Axia is a local-first application that turns a tiny provider-backed model into a structured worker inside a deterministic orchestration system. The default standalone runtime profile may use local Ollama through a `crux-providers` boundary adapter, but the controller is provider-agnostic from the first build.
 
 Axia is not machine-learning software or durable memory software. It does not train a model, update weights, perform reinforcement learning, run LoRA jobs, own long-term user memory, or claim that the underlying model has learned new capability. It is an agentic harness: a deterministic controller that surrounds a weak local model with typed reasoning steps, run-local context, validation, scoring, repair, and replay.
 
@@ -98,7 +98,7 @@ The UI may say "enhanced by orchestration" or "multi-step verified answer." It s
 
 The MVP must include:
 
-- Provider-agnostic model connection through `crux-providers`, with local Ollama as the default profile.
+- Provider-agnostic model connection through an Axia-native provider port, with local Ollama available through an optional `crux-providers` adapter in the standalone profile.
 - Model profile manager for tiny models.
 - Deterministic run controller.
 - Task constitution generator.
@@ -168,20 +168,25 @@ The MVP must not include:
 
 ## 7. Functional Requirements
 
-### FR-1: Provider-Agnostic Model Execution Through `crux-providers`
+### FR-1: Provider-Agnostic Model Execution Through an Axia Provider Port
 
-The app must not implement its own Ollama HTTP client, OpenAI client, Anthropic client, Gemini client, retry wrapper, streaming wrapper, key resolver, or model-registry fetcher.
+The core app must not implement its own Ollama HTTP client, OpenAI client, Anthropic client, Gemini client, retry wrapper, streaming wrapper, key resolver, or model-registry fetcher.
 
-`crux-providers` is the sole LLM dependency and the model-access boundary. Axia's controller receives provider and model-registry/listing dependencies through constructor injection. The standalone CLI and local web server instantiate those dependencies in the composition root. The default composition root creates a local Ollama profile, but the controller itself must not know whether the backing provider is Ollama, OpenAI, Anthropic, Gemini, OpenRouter, Deepseek, xAI, or an Axia-owned fake `LLMProvider` test double.
+Axia core has no concrete provider dependency. Its model-access contract is an Axia-native provider port. The controller receives provider and optional model-registry/listing dependencies through constructor injection.
+
+`crux-providers` is an optional boundary adapter dependency. The standalone CLI and local web server may instantiate a Crux-backed adapter in the composition root. A host application that already uses Crux should inject its existing Crux-backed adapter or provider dependency into Axia. Axia must not create a hidden second Crux stack, own Crux lifecycle globally, or allow Crux request/response objects to become core reasoning types.
+
+The default standalone composition root may create a local Ollama profile through the Crux adapter, but the controller itself must not know whether the backing provider is Ollama, OpenAI, Anthropic, Gemini, OpenRouter, Deepseek, xAI, or an Axia-owned fake provider test double.
 
 The provider boundary must support:
 
-- text generation through the normalized `crux-providers` chat contract;
+- text generation through the Axia-native provider contract;
+- adapter translation into the normalized `crux-providers` chat contract when the optional Crux adapter is installed;
 - JSON-mode where the selected provider supports it;
 - JSON-repair fallback owned by Axia when the provider cannot guarantee structured output;
 - streaming and non-streaming output where exposed by the provider;
 - deterministic request parameters where the provider supports them;
-- model discovery through `ModelRegistryRepository`, `ModelListingProvider`, or concrete provider `list_models(refresh=False)` support;
+- optional model discovery through adapter-supplied catalog/listing dependencies;
 - timeout handling, retry, cancellation, and streaming primitives through the provider layer where available;
 - raw normalized `ProviderMetadata` written into the run manifest;
 - Axia-owned fake-provider injection for deterministic offline tests.
@@ -192,15 +197,15 @@ Axia must include its own deterministic fake `LLMProvider` implementation for te
 
 The fake provider must:
 
-- accept a `ChatRequest` and return a `ChatResponse`;
+- accept an Axia-native model request and return an Axia-native model response;
 - inspect prompt content for known patterns and return fixed schema-shaped JSON, such as returning `{"status": "ok", "value": "test"}` when the prompt contains an `output_schema` marker;
 - support configured failure modes, including malformed JSON, timeout-like failures, rate-limit-like failures, empty responses, and schema-mismatched JSON;
-- include deterministic metadata, such as `ProviderMetadata(request_id="fake-123", response_id="fake-456")`, so manifests have complete traces;
+- include deterministic Axia-native metadata, such as `request_id="fake-123"` and `response_id="fake-456"`, so manifests have complete traces;
 - avoid network, Ollama, subprocesses, random sleeps, real clocks, or non-deterministic IDs unless they are explicitly supplied by the test.
 
 The purpose is to validate Axia's decision logic offline, not just to increase test coverage around a happy-path transport call.
 
-Concrete Crux imports expected by Axia:
+Optional Crux adapter imports expected by Axia's Crux boundary adapter:
 
 ```python
 from crux_providers.base import (
@@ -217,9 +222,9 @@ from crux_providers.base.dto.adapter_params import AdapterParams
 from crux_providers.base.interfaces import LLMProvider, ModelListingProvider
 ```
 
-Axia must pin and test this exact public import surface with a startup smoke test.
+Axia must pin and test this exact public import surface only in Crux adapter tests or startup checks. Core reasoning tests must run without `crux-providers` installed.
 
-Provider-specific behavior belongs either inside `crux-providers` or in the composition root. It must not enter the Axia controller.
+Provider-specific behavior belongs inside the provider library, the boundary adapter, or the composition root. It must not enter the Axia controller.
 
 ### FR-2: Model Profiles
 
@@ -559,9 +564,14 @@ Disallowed as a required product feature:
            └──► Memory Candidate Emitter
 
 ┌─────────────────────┐       ┌─────────────────────────────┐
-│ Crux Adapter Bridge │◄─────►│ crux-providers              │
-│ Axia bridge only    │       │ Ollama/OpenAI/etc. adapters │
-└─────────────────────┘       └─────────────────────────────┘
+│ ModelProvider Port  │◄─────►│ Optional Crux Adapter       │
+│ Axia-native types   │       │ crux-providers bridge only  │
+└─────────────────────┘       └──────────────┬──────────────┘
+                                             │
+                              ┌──────────────▼──────────────┐
+                              │ crux-providers              │
+                              │ Ollama/OpenAI/etc. adapters │
+                              └─────────────────────────────┘
 
 ┌─────────────────────┐       ┌─────────────────────┐
 │ SQLite Run Store    │       │ Context Provider    │
@@ -614,12 +624,12 @@ A minimal standard-mode graph:
 N1 canonicalize_request
 N2 build_constitution depends_on N1
 N3 retrieve_context depends_on N2
-N4 decompose_problem depends_on N2,N3
+N4 plan_reasoning depends_on N2,N3
 N5 draft_answer depends_on N4
 N6 critique_answer depends_on N5,N2
 N7 repair_answer depends_on N5,N6
 N8 verify_answer depends_on N7,N2,N3
-N9 final_synthesis depends_on N7,N8
+N9 final_answer depends_on N7,N8
 N10 emit_memory_candidates depends_on N9
 ```
 
@@ -699,6 +709,8 @@ It must receive:
 - only the relevant evidence;
 - the target threshold.
 
+The repair target must enumerate only the dimensions below the source node's acceptance threshold. A repair context must not admit an unrelated artifact or the full run trace.
+
 ### 12.8 Merger Agent
 
 Purpose: combine accepted branch artifacts without losing constraints.
@@ -708,6 +720,8 @@ Purpose: combine accepted branch artifacts without losing constraints.
 Purpose: produce the final user-facing response.
 
 It must not introduce new major claims unless supported by accepted artifacts.
+
+The finalizer must return claim-to-artifact support records. Axia renders the user-facing answer from those supported claims and supplied unresolved caveats rather than accepting untracked model prose.
 
 ### 12.10 Memory Candidate Agent
 
@@ -757,19 +771,24 @@ Every prompt must be built from canonical JSON serialization:
 
 ```json
 {
+  "schema_version": 1,
   "run_id": "string",
   "created_at": "iso8601",
   "app_version": "string",
   "user_request_hash": "string",
-  "model_profile_hash": "string",
-  "prompt_pack_hash": "string",
+  "model_profile": {
+    "name": "string",
+    "profile_hash": "string",
+    "provider_metadata": {}
+  },
+  "prompt_hashes": {},
   "mode": "quick|standard|deep",
   "status": "new|running|complete|failed|cancelled",
   "canonical_request": {},
   "constitution": {},
   "work_graph": {},
   "node_results": [],
-  "final_answer": "string",
+  "final_answer": "string or structured final-answer projection",
   "memory_candidates": [],
   "metrics": {}
 }
@@ -779,12 +798,16 @@ Every prompt must be built from canonical JSON serialization:
 
 ```json
 {
+  "revision": 1,
+  "previous_revision_hash": null,
+  "source_request_hash": "string",
+  "canonical_request_hash": "string",
   "mission": "string",
   "deliverable_type": "answer|spec|code_plan|research_summary|document|debug_plan",
-  "user_visible_goal": "string",
+  "deliverable_definition": "string",
   "constraints": ["string"],
   "non_goals": ["string"],
-  "allowed_tools": ["none|context_provider|filesystem|web|shell|code_runner"],
+  "allowed_operations": ["none|context_provider|filesystem|web|shell|code_runner"],
   "required_evidence": ["string"],
   "quality_rubric": [
     {
@@ -796,6 +819,7 @@ Every prompt must be built from canonical JSON serialization:
   "max_depth": 4,
   "max_model_calls": 24,
   "max_retries_per_node": 2,
+  "max_seconds": 300,
   "stop_conditions": ["string"]
 }
 ```
@@ -804,27 +828,56 @@ Every prompt must be built from canonical JSON serialization:
 
 ```json
 {
-  "graph_id": "string",
+  "constitution_revision_hash": "string",
   "nodes": [
     {
-      "node_id": "N1",
-      "type": "clarify|retrieve|analyze|draft|critique|repair|merge|verify|finalize|emit_memory_candidate",
-      "title": "string",
+      "node_id": "node_string",
+      "kind": "canonicalize|constitute|retrieve|plan|decompose|assemble_context|analyze|draft|critique|repair|merge|verify|finalize|final|synthesize|emit_memory_candidate",
       "depends_on": [],
-      "agent": "string",
-      "input_artifacts": [],
-      "output_schema": "string",
-      "retry_policy": {
-        "max_retries": 2,
-        "repair_agent": "repair"
+      "input_schema": {},
+      "output_schema": {},
+      "context_scope": ["string"],
+      "allowed_operations": ["context_provider|filesystem|web|shell|code_runner"],
+      "retry_limit": 2,
+      "score_policy": {
+        "accept_threshold": 0.82,
+        "repair_threshold": 0.65,
+        "regenerate_threshold": 0.45
       },
-      "acceptance_threshold": 0.82
+      "failure_behavior": "fail_run|retry|continue_with_caveat"
     }
+  ],
+  "refinement_cycles": [
+    {"from_node_id": "node_repair", "to_node_id": "node_critique", "max_iterations": 2}
   ]
 }
 ```
 
-### 14.4 Node Result
+### 14.4 Context Pack
+
+```json
+{
+  "node_id": "node_string",
+  "node_instruction": "string",
+  "constitution_subset": {},
+  "references": [
+    {
+      "scope": "string",
+      "source_type": "request|artifact|evidence|scorecard|policy",
+      "reference_id": "string",
+      "content": {},
+      "content_hash": "string",
+      "accepted": true
+    }
+  ],
+  "output_schema": {},
+  "max_serialized_characters": 6400
+}
+```
+
+The core budget is a deterministic serialized-character ceiling. A future model profile may additionally calculate provider-specific token counts, but it must not weaken this controller limit.
+
+### 14.5 Node Result
 
 ```json
 {
@@ -832,19 +885,33 @@ Every prompt must be built from canonical JSON serialization:
   "attempt": 1,
   "status": "accepted|repaired|rejected|failed",
   "input_hash": "string",
+  "prompt_hash": "string",
   "output_hash": "string",
+  "artifact_id": "string or null",
   "artifact": {},
   "validation_errors": [],
   "scorecard": {},
+  "provider_response": {
+    "text": "string",
+    "metadata": {},
+    "content_hash": "string"
+  },
   "started_at": "iso8601",
   "ended_at": "iso8601"
 }
 ```
 
-### 14.5 Scorecard
+`validation_errors` must retain typed parse and schema issues for rejected node outputs so retry and repair policy can inspect the actual failure.
+
+### 14.6 Scorecard
 
 ```json
 {
+  "schema_version": 1,
+  "scorecard_id": "string",
+  "source_run_id": "string",
+  "source_node_id": "string",
+  "source_artifact_id": "string",
   "overall": 0.0,
   "dimensions": [
     {
@@ -858,10 +925,11 @@ Every prompt must be built from canonical JSON serialization:
 }
 ```
 
-### 14.6 Memory Candidate Projection
+### 14.7 Memory Candidate Projection
 
 ```json
 {
+  "schema_version": 1,
   "candidate_id": "string",
   "type": "preference|project|fact|pattern|correction|plan_template|failure_case",
   "proposed_scope": "global|project|conversation|run",
@@ -875,6 +943,8 @@ Every prompt must be built from canonical JSON serialization:
   "tags": ["string"]
 }
 ```
+
+Axia may form and expose this projection in a run trace. It does not persist, promote, search, or delete durable memory from this projection.
 
 ---
 
@@ -951,6 +1021,8 @@ The context packer must exclude:
 - raw hidden reasoning text.
 
 Each node type must define a context budget.
+
+Context providers are optional boundary ports. Their output enters Axia only as scoped evidence references, never as instructions, constitution changes, run-limit changes, or permission changes. Context query traces retain query metadata and result reference identities and hashes; they do not require the full evidence content to be duplicated in the trace.
 
 Example:
 
@@ -1100,7 +1172,7 @@ Deterministic checks include:
 - no unresolved placeholder text;
 - no unsupported tool claims.
 
-Model-based scoring is allowed, but it must be bounded by schema and threshold rules.
+Model-based scoring is allowed, but it must be parsed through the scorecard schema. The controller recomputes the aggregate and threshold decision from the submitted dimensions; a model critique cannot declare acceptance on its own.
 
 ### 18.2 Score Aggregation
 
@@ -1111,6 +1183,8 @@ overall = sum(weight_i * score_i) / sum(weight_i)
 ```
 
 The controller must store per-dimension scores and not only the aggregate.
+
+The aggregate is a summary. Acceptance and repair routing are gated by the lowest required dimension, so a strong aggregate cannot conceal a failed criterion.
 
 ### 18.3 Thresholds
 
@@ -1143,7 +1217,7 @@ Budget:
 
 - max calls: 6;
 - max retries per node: 1;
-- max time: 60 seconds.
+- max time: 180 seconds on the standalone CPU-first profile.
 
 ### 19.2 Standard Mode
 
@@ -1200,6 +1274,8 @@ axia profiles list
 axia profiles create
 ```
 
+`axia trace RUN_ID` emits a versioned machine-readable trace by default. `--format text` renders the same projection for terminal inspection. Both forms expose artifact-level evidence and context references only; neither form exposes raw provider prose or context content.
+
 ### 20.2 Local Web UI
 
 Pages:
@@ -1219,6 +1295,8 @@ The run page must show:
 - accepted artifacts;
 - final answer;
 - memory candidates.
+
+The initial local UI is available through `axia web`. It is a read-only browser over locally stored run summaries and safe run-detail projections. It does not create runs, own model providers, expose raw provider responses, search durable memory, or change reasoning contracts.
 
 ### 20.3 Trace Display
 
@@ -1396,18 +1474,24 @@ orchestration:
   max_retries_per_node: 2
   default_accept_threshold: 0.82
   default_repair_threshold: 0.65
+  default_regenerate_threshold: 0.45
 
-memory:
-  read_policy: on
-  write_policy: ask
+context:
   top_k: 5
-  backend: sqlite_fts
+  run_local_index: sqlite_fts
+
+candidate_emission:
+  enabled: false
 
 ui:
   enable_web: true
   host: 127.0.0.1
   port: 7817
 ```
+
+The `context` section controls Axia's run-local evidence assembly only. An external memory module may supply scoped context through `ContextProvider`, and an optional memory-candidate sink may receive projections when explicitly configured at the composition root. Axia does not configure durable-memory read, write, promotion, or forgetting policy.
+
+When no external memory module is configured, Axia retrieves no external memory context and emits no outbound candidate delivery. Candidate formation remains a run-local projection in either configuration.
 
 ### 24.2 `profiles/tiny-default.yaml`
 
@@ -1437,18 +1521,22 @@ MVP stack:
 - Typer for CLI;
 - SQLite for run store;
 - Pydantic for schemas;
-- `crux-providers==0.1.1` as the sole LLM/provider dependency during MVP;
-- local development may use a direct dependency reference, such as `crux-providers @ git+...`, when Axia is built against an unreleased Crux commit;
+- no concrete LLM/provider dependency in Axia core;
+- optional `crux-providers==0.1.1` adapter dependency for standalone profiles that choose Crux;
+- local development may use a direct optional dependency reference, such as `crux-providers @ git+...`, when the optional Crux adapter is built against an unreleased Crux commit;
 - optional SQLite FTS5 for run-local or project-local context indexing;
 - optional local web UI with simple HTML/HTMX or React later.
 
-Reason: this keeps Axia fast, inspectable, provider-agnostic, and easy to merge into Crux Studio. A direct Ollama client would save little or nothing in meaningful runtime because tiny-model latency is dominated by generation and prompt budget, not by a thin provider abstraction. If Ollama-specific performance work is ever needed, it belongs inside `crux-providers` or behind its adapter boundary, not inside the Axia controller.
+Reason: this keeps Axia fast, inspectable, provider-agnostic, and easy to compose with Crux Studio or any app that already owns model-provider setup. A direct Ollama client would save little or nothing in meaningful runtime because tiny-model latency is dominated by generation and prompt budget, not by a thin provider abstraction. If Ollama-specific performance work is ever needed, it belongs inside the provider library or behind the adapter boundary, not inside the Axia controller.
 
 
 MVP `pyproject.toml` dependency rule:
 
 ```toml
-dependencies = [
+dependencies = []
+
+[project.optional-dependencies]
+crux = [
   "crux-providers==0.1.1",
 ]
 ```
@@ -1476,9 +1564,15 @@ axia/
       run_controller.py
       graph_executor.py
       retry_policy.py
-    llm/
-      crux_adapter.py
+    boundary/
+      ports/
+        model_provider.py
+      adapters/
+        crux_provider.py
+        fake_provider.py
+    policy/
       model_profile.py
+    operation/
       json_repair.py
     prompts/
       prompt_pack.py
@@ -1589,7 +1683,7 @@ def validate_or_repair(node, result):
 
 ## 28. Acceptance Tests
 
-### Gate A: Crux Provider Bridge Works
+### Gate A: Provider Port and Optional Crux Adapter Work
 
 Pass conditions:
 
@@ -1598,7 +1692,8 @@ Pass conditions:
 - app can receive text;
 - app can request JSON or invoke Axia-owned JSON repair fallback;
 - timeout and retry behavior is tested through the provider boundary;
-- startup smoke test verifies the expected `crux-providers` imports;
+- core tests pass without `crux-providers` installed;
+- optional Crux adapter startup smoke test verifies the expected `crux-providers` imports when the adapter is installed;
 - schema-aware fake provider exercises success and failure paths offline.
 
 ### Gate B: Schema Validation Works
@@ -1631,10 +1726,14 @@ For each task, compare:
 
 Score with the same rubric.
 
+The fixed `baseline_v1` suite contains 20 named tasks. Each report records the complete task input, one output and run ID per mode, any mode-provided scorecard, and per-mode summary metrics. Quick and standard benchmark runners are explicit adapters over an injected Axia execution path; the harness does not claim their output is orchestrated until that path is supplied.
+
+Benchmark reports preserve two distinct scorecard kinds. A mode-provided run scorecard evaluates an artifact within that run. A benchmark comparison scorecard evaluates the final answer and trace-backed controls across modes: final-answer usefulness, decomposition coverage, schema validity, constraint coverage, claim-to-evidence support, repair effectiveness, and replayability. The default final-answer evaluator is a deterministic lexical lower bound, not a claim of semantic correctness; every scored report records the evaluator identity and parameters, and a comparative run must retain the same configuration for every mode. A repair criterion with no recorded repair attempt is explicitly unassessed, never counted as a successful repair.
+
 Pass condition:
 
 ```text
-Axia standard mode improves median score over single-shot by at least 20%.
+Axia standard mode improves median benchmark score over single-shot by at least 0.20 score points.
 ```
 
 ### Gate E: Trace Completeness
@@ -1659,14 +1758,15 @@ Pass conditions:
 
 ## 29. MVP Build Roadmap
 
-### Phase 1: Skeleton and Crux Provider Bridge
+### Phase 1: Skeleton, Provider Port, and Optional Crux Adapter
 
 Deliverables:
 
 - Python package;
 - config loader;
 - model profile loader;
-- `llm/crux_adapter.py` bridge around `ProviderFactory`, `ChatRequest`, and model profile translation;
+- `boundary/ports/model_provider.py` Axia-native provider port;
+- `boundary/adapters/crux_provider.py` optional bridge around `ProviderFactory`, `ChatRequest`, and model profile translation;
 - Axia-owned deterministic schema-aware fake provider;
 - simple `axia ask` command;
 - run manifest creation.
@@ -1821,9 +1921,9 @@ Hard requirements:
 - Do not train, fine-tune, update weights, run LoRA, run reinforcement learning, or silently export training data.
 - Python 3.12.
 - Local-only by default.
-- Use `crux-providers==0.1.1` as the sole LLM/provider dependency. Do not implement an Ollama client, OpenAI client, Anthropic client, Gemini client, retry wrapper, streaming wrapper, key resolver, or provider registry inside Axia.
-- Implement `llm/crux_adapter.py` as a thin bridge around `ProviderFactory`, `ChatRequest`, and model profile translation.
-- The Axia controller must receive provider/catalog dependencies through constructor injection. The CLI/server composition root may instantiate `crux-providers` with a local Ollama profile, but the core controller must remain provider-agnostic.
+- Keep Axia core free of concrete LLM/provider dependencies. Do not implement an Ollama client, OpenAI client, Anthropic client, Gemini client, retry wrapper, streaming wrapper, key resolver, or provider registry inside Axia core.
+- Implement `boundary/adapters/crux_provider.py` as an optional thin bridge around `ProviderFactory`, `ChatRequest`, and model profile translation.
+- The Axia controller must receive provider/catalog dependencies through constructor injection. The CLI/server composition root may instantiate `crux-providers` with a local Ollama profile, but a host application that already uses Crux may inject its existing Crux-backed adapter. The core controller must remain provider-agnostic.
 - The fake provider must be deterministic and schema-aware, not a simple mock. It must support both success and failure paths, including malformed JSON and timeout-like failures, so retry, repair, scoring, and manifest logic can be tested offline.
 - Deterministic run controller with replayable manifest.
 - Pydantic schemas for canonical request, constitution, work graph, node result, scorecard, and memory candidate.
